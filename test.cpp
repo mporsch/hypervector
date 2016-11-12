@@ -34,10 +34,13 @@ int main(int argc, char** argv) {
   hvec3.assign(3, 2, 1, "hi");
   std::cout << hvec3 << std::endl;
 
-  hvec3.resize(1, 2, 3, "he");
+  hvec3.resize(1, 1, 1, "he");
   std::cout << hvec3 << std::endl;
 
-  hvec3.resize(3, 2, 1);
+  hvec3.resize(2, 2, 2, "ha");
+  std::cout << hvec3 << std::endl;
+
+  hvec3.resize(3, 3, 3);
   std::cout << hvec3 << std::endl;
 
   hypervector<std::string, 2> hvec2(3, 3, "0");

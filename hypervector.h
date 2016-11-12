@@ -36,14 +36,14 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
   resize(size_type dim1, Args&&... args) {
-    resizeValue(dim1, std::forward<Args>(args)...);
+    _resize(dim1, std::forward<Args>(args)...);
   }
 
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N - 1, void>::type
   resize(size_type dim1, Args&&... args) {
-    resizeNoValue(dim1, std::forward<Args>(args)...);
+    _resize(dim1, std::forward<Args>(args)..., T());
   }
 
 
@@ -121,30 +121,13 @@ public:
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  resizeValue(size_type dim1, Args&&... args) {
+  _resize(size_type dim1, Args&&... args) {
     _dims[N - sizeof...(Args)] = dim1;
-    resizeValue(std::forward<Args>(args)...);
+    _resize(std::forward<Args>(args)...);
   }
 
-  void resizeValue(T&& val) {
-    _vec.assign(size(), std::forward<T>(val));
-  }
-
-
-  template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 1, void>::type
-  resizeNoValue(size_type dim1, Args&&... args) {
-
-    _dims[N - 1 - sizeof...(Args)] = dim1;
-
-    resizeNoValue(std::forward<Args>(args)...);
-  }
-
-  void resizeNoValue(size_type dimN) {
-
-    _dims[N - 1] = dimN;
-
-    _vec.resize(size());
+  void _resize(T&& val) {
+    _vec.resize(size(), std::forward<T>(val));
   }
 
 private:
