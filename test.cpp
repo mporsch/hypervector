@@ -14,7 +14,11 @@ int main(int argc, char** argv) {
 
   std::cout << "size " << hvec3.size() << std::endl;
 
-  hvec3.assign(1, 2, 3, "hu");
+  hvec3.resize(1, 2, 3, "hu");
+
+  std::cout << "size " << hvec3.size() << std::endl;
+
+  hvec3.resize(3, 2, 1);
 
   std::cout << "size " << hvec3.size() << std::endl;
 }

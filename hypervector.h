@@ -12,6 +12,7 @@ public:
     : _dims{0} {
   }
 
+
   template<typename ...Args>
   hypervector(
     typename std::enable_if<sizeof...(Args) <= N, size_t>::type dim1,
@@ -25,19 +26,16 @@ public:
 
 
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) + 1 <= N, void>::type
+  typename std::enable_if<sizeof...(Args) == N, void>::type
   resize(size_t dim1, Args&&... args) {
-
-    _dims[N - 1 - sizeof...(Args)] = dim1;
-
-    resize(std::forward<Args>(args)...);
+    resizeValue(dim1, std::forward<Args>(args)...);
   }
 
-  void resize(size_t dimN) {
 
-    _dims[N - 1] = dimN;
-
-    _vec.resize(size());
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) == N - 1, void>::type
+  resize(size_t dim1, Args&&... args) {
+    resizeNoValue(dim1, std::forward<Args>(args)...);
   }
 
 
@@ -51,7 +49,6 @@ public:
   }
 
   void assign(T&& val) {
-
     _vec.assign(size(), std::forward<T>(val));
   }
 
@@ -61,6 +58,35 @@ public:
     for (auto it = std::begin(_dims); it != std::end(_dims); ++it)
       wholeSize *= *it;
     return wholeSize;
+  }
+
+private:
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N, void>::type
+  resizeValue(size_t dim1, Args&&... args) {
+    _dims[N - sizeof...(Args)] = dim1;
+    resizeValue(std::forward<Args>(args)...);
+  }
+
+  void resizeValue(T&& val) {
+    _vec.assign(size(), std::forward<T>(val));
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 1, void>::type
+  resizeNoValue(size_t dim1, Args&&... args) {
+
+    _dims[N - 1 - sizeof...(Args)] = dim1;
+
+    resizeNoValue(std::forward<Args>(args)...);
+  }
+
+  void resizeNoValue(size_t dimN) {
+
+    _dims[N - 1] = dimN;
+
+    _vec.resize(size());
   }
 
 private:
