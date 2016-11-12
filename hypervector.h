@@ -8,6 +8,14 @@ template<typename T, size_t N>
 class hypervector
 {
 public:
+  using container       = typename std::vector<T>;
+  using reference       = typename container::reference;
+  using const_reference = typename container::const_reference;
+  using size_type       = typename container::size_type;
+  using iterator        = typename container::iterator;
+  using const_iterator  = typename container::const_iterator;
+
+public:
   hypervector()
     : _dims{0} {
   }
@@ -15,7 +23,7 @@ public:
 
   template<typename ...Args>
   hypervector(
-    typename std::enable_if<sizeof...(Args) <= N, size_t>::type dim1,
+    typename std::enable_if<sizeof...(Args) <= N, size_type>::type dim1,
     Args&&... args) {
     assign(dim1, std::forward<Args>(args)...);
   }
@@ -27,21 +35,21 @@ public:
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
-  resize(size_t dim1, Args&&... args) {
+  resize(size_type dim1, Args&&... args) {
     resizeValue(dim1, std::forward<Args>(args)...);
   }
 
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N - 1, void>::type
-  resize(size_t dim1, Args&&... args) {
+  resize(size_type dim1, Args&&... args) {
     resizeNoValue(dim1, std::forward<Args>(args)...);
   }
 
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  assign(size_t dim1, Args&&... args) {
+  assign(size_type dim1, Args&&... args) {
 
     _dims[N - sizeof...(Args)] = dim1;
 
@@ -53,15 +61,15 @@ public:
   }
 
 
-  size_t size() const {
-    size_t wholeSize = 1;
+  size_type size() const {
+    size_type wholeSize = 1;
     for (auto it = std::begin(_dims); it != std::end(_dims); ++it)
       wholeSize *= *it;
     return wholeSize;
   }
 
 
-  size_t size(size_t dim) const {
+  size_type size(size_type dim) const {
     if (dim < N)
       return _dims[dim];
     else
@@ -70,30 +78,50 @@ public:
 
 
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, T&>::type
-  at(size_t dim1, size_t dim2, Args&&... args) {
+  typename std::enable_if<sizeof...(Args) <= N - 2, reference>::type
+  at(size_type dim1, size_type dim2, Args&&... args) {
     return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
   }
 
-  T& at(size_t dimN) {
+  reference at(size_type dimN) {
     return _vec.at(dimN);
   }
 
 
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, const T&>::type
-  at(size_t dim1, size_t dim2, Args&&... args) const {
+  typename std::enable_if<sizeof...(Args) <= N - 2, const_reference>::type
+  at(size_type dim1, size_type dim2, Args&&... args) const {
     return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
   }
 
-  const T& at(size_t dimN) const {
+  const_reference at(size_type dimN) const {
     return _vec.at(dimN);
+  }
+
+
+  iterator begin() {
+    return _vec.begin();
+  }
+
+
+  iterator end() {
+    return _vec.end();
+  }
+
+
+  const_iterator begin() const {
+    return _vec.cbegin();
+  }
+
+
+  const_iterator end() const {
+    return _vec.cend();
   }
 
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  resizeValue(size_t dim1, Args&&... args) {
+  resizeValue(size_type dim1, Args&&... args) {
     _dims[N - sizeof...(Args)] = dim1;
     resizeValue(std::forward<Args>(args)...);
   }
@@ -105,14 +133,14 @@ private:
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 1, void>::type
-  resizeNoValue(size_t dim1, Args&&... args) {
+  resizeNoValue(size_type dim1, Args&&... args) {
 
     _dims[N - 1 - sizeof...(Args)] = dim1;
 
     resizeNoValue(std::forward<Args>(args)...);
   }
 
-  void resizeNoValue(size_t dimN) {
+  void resizeNoValue(size_type dimN) {
 
     _dims[N - 1] = dimN;
 
@@ -120,8 +148,8 @@ private:
   }
 
 private:
-  size_t _dims[N];
-  std::vector<T> _vec;
+  size_type _dims[N];
+  container _vec;
 };
 
 #endif // HYPERVECTOR_H
