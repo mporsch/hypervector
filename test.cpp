@@ -5,13 +5,16 @@
 
 int main(int argc, char** argv) {
 
-  hypervector<std::string, 3> hvec3;
-  hvec3.resize(3, 3, 3);
+  hypervector<std::string, 3> hvec3(1, 2, 3, "ho");
 
   std::cout << "size " << hvec3.size() << std::endl;
 
   
-  hvec3.assign(1, 1, 1, "hi");
+  hvec3.assign(3, 2, 1, "hi");
+
+  std::cout << "size " << hvec3.size() << std::endl;
+
+  hvec3.assign(1, 2, 3, "hu");
 
   std::cout << "size " << hvec3.size() << std::endl;
 }

@@ -12,6 +12,17 @@ public:
     : _dims{0} {
   }
 
+  template<typename ...Args>
+  hypervector(
+    typename std::enable_if<sizeof...(Args) <= N, size_t>::type dim1,
+    Args&&... args) {
+    assign(dim1, std::forward<Args>(args)...);
+  }
+
+
+  ~hypervector() {
+  }
+
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) + 1 <= N, void>::type
