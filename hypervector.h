@@ -60,6 +60,13 @@ public:
     return wholeSize;
   }
 
+  size_t size(size_t dim) const {
+    if (dim < N)
+      return _dims[dim];
+    else
+      return 0;
+  }
+
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
