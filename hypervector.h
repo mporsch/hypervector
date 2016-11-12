@@ -60,11 +60,34 @@ public:
     return wholeSize;
   }
 
+
   size_t size(size_t dim) const {
     if (dim < N)
       return _dims[dim];
     else
       return 0;
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 2, T&>::type
+  at(size_t dim1, size_t dim2, Args&&... args) {
+    return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
+  }
+
+  T& at(size_t dimN) {
+    return _vec.at(dimN);
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 2, const T&>::type
+  at(size_t dim1, size_t dim2, Args&&... args) const {
+    return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
+  }
+
+  const T& at(size_t dimN) const {
+    return _vec.at(dimN);
   }
 
 private:
