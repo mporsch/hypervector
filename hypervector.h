@@ -67,6 +67,22 @@ public:
   }
 
 
+  // at(size_type pos)
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) == N - 1, reference>::type
+  at(size_type dim1, Args&&... args) {
+    return _at(dim1, std::forward<Args>(args)...);
+  }
+
+
+  // at(size_type pos) const
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) == N - 1, const_reference>::type
+  at(size_type dim1, Args&&... args) const {
+    return _at(dim1, std::forward<Args>(args)...);
+  }
+
+
   size_type size() const {
     size_type wholeSize = 1;
     for (auto it = std::begin(_dims); it != std::end(_dims); ++it)
@@ -80,28 +96,6 @@ public:
       return _dims[dim];
     else
       return 0;
-  }
-
-
-  template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, reference>::type
-  at(size_type dim1, size_type dim2, Args&&... args) {
-    return at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
-  }
-
-  reference at(size_type dimN) {
-    return _vec.at(dimN);
-  }
-
-
-  template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, const_reference>::type
-  at(size_type dim1, size_type dim2, Args&&... args) const {
-    return at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
-  }
-
-  const_reference at(size_type dimN) const {
-    return _vec.at(dimN);
   }
 
 
@@ -148,6 +142,28 @@ private:
 
   void _assign(T&& val) {
     _vec.assign(size(), std::forward<T>(val));
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 2, reference>::type
+  _at(size_type dim1, size_type dim2, Args&&... args) {
+    return _at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
+  }
+
+  reference _at(size_type dimN) {
+    return _vec.at(dimN);
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 2, const_reference>::type
+  _at(size_type dim1, size_type dim2, Args&&... args) const {
+    return _at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
+  }
+
+  const_reference _at(size_type dimN) const {
+    return _vec.at(dimN);
   }
 
 private:
