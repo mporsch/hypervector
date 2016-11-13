@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   hvec3.resize(3, 3, 3);
   std::cout << hvec3 << std::endl;
 
-  hypervector<std::string, 2> hvec2(3, 3, "0");
+  hypervector<std::string, 2> hvec2(2, 6, "0");
   std::cout << hvec2 << std::endl;
 
   int i = 0;

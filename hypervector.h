@@ -86,7 +86,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 2, reference>::type
   at(size_type dim1, size_type dim2, Args&&... args) {
-    return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
+    return at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
   }
 
   reference at(size_type dimN) {
@@ -97,7 +97,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 2, const_reference>::type
   at(size_type dim1, size_type dim2, Args&&... args) const {
-    return at(dim1 * (_dims[N - 2 - sizeof...(Args)] - 1) + dim2, std::forward<Args>(args)...);
+    return at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
   }
 
   const_reference at(size_type dimN) const {
