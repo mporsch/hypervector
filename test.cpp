@@ -49,6 +49,6 @@ int main(int argc, char** argv) {
   int i = 0;
   for (int x = 0; x < hvec2.size(0); ++x)
     for (int y = 0; y < hvec2.size(1); ++y)
-      hvec2.at(x, y) = std::to_string(i++);
+      hvec2[x][y] = std::to_string(i++);
   std::cout << hvec2 << std::endl;
 }
