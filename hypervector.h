@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <numeric>
 
 template<typename T, size_t N>
 class subdimension
@@ -138,10 +139,10 @@ public:
 
 
   size_type size() const {
-    size_type wholeSize = 1;
-    for (auto it = std::begin(_dims); it != std::end(_dims); ++it)
-      wholeSize *= *it;
-    return wholeSize;
+    return std::accumulate(std::begin(_dims), std::end(_dims), 1,
+      [](size_t prod, size_t dim) -> size_t {
+        return prod * dim;
+      });
   }
 
 
