@@ -13,6 +13,7 @@ class subdimension
 
   using container = typename std::vector<T>;
   using reference = typename container::reference;
+  using const_reference = typename container::const_reference;
   using size_type = typename container::size_type;
 
   subdimension(T* data, const size_t* dims)
@@ -33,6 +34,22 @@ public:
   template<typename _T = T,
            typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
   reference operator[](size_type pos) {
+    return *(_data + pos);
+  }
+
+
+  template<typename _T = T,
+           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
+  const subdimension<T, N - 1>
+  operator[](size_type pos) const {
+    return subdimension<T, N - 1>(
+      _data + pos * (_dims + N - 1),
+      _dims);
+  }
+
+  template<typename _T = T,
+           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
+  const_reference operator[](size_type pos) const {
     return *(_data + pos);
   }
 
@@ -134,6 +151,23 @@ public:
   template<typename _T = T,
            typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
   reference operator[](size_type pos) {
+    return _vec[pos];
+  }
+
+
+  // operator[](size_type pos) const
+  template<typename _T = T,
+           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
+  const subdimension<T, N - 1>
+  operator[](size_type pos) const {
+    return subdimension<T, N - 1>(
+      &_vec[pos * _dims[N - 1]],
+      &_dims[0]);
+  }
+
+  template<typename _T = T,
+           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
+  const_reference operator[](size_type pos) const {
     return _vec[pos];
   }
 
