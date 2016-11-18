@@ -6,60 +6,6 @@
 #include <numeric>
 
 template<typename T, size_t N>
-class subdimension
-{
-  template<typename U, size_t M>
-  friend class hypervector;
-
-  using container = typename std::vector<T>;
-  using reference = typename container::reference;
-  using const_reference = typename container::const_reference;
-  using size_type = typename container::size_type;
-
-  subdimension(T* data, const size_t* dims)
-    : _data(data)
-    , _dims(dims) {
-  }
-
-public:
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
-  subdimension<T, N - 1>
-  operator[](size_type pos) {
-    return subdimension<T, N - 1>(
-      _data + pos * (_dims + N - 1),
-      _dims);
-  }
-
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
-  reference operator[](size_type pos) {
-    return *(_data + pos);
-  }
-
-
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
-  const subdimension<T, N - 1>
-  operator[](size_type pos) const {
-    return subdimension<T, N - 1>(
-      _data + pos * (_dims + N - 1),
-      _dims);
-  }
-
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
-  const_reference operator[](size_type pos) const {
-    return *(_data + pos);
-  }
-
-private:
-  T* _data;
-  const size_t* _dims;
-};
-
-
-template<typename T, size_t N>
 class hypervector
 {
 public:
@@ -69,6 +15,53 @@ public:
   using size_type       = typename container::size_type;
   using iterator        = typename container::iterator;
   using const_iterator  = typename container::const_iterator;
+
+private:
+  template<typename U, size_t M>
+  class subdimension
+  {
+  public:
+    subdimension(U* data, const size_t* dims)
+      : _data(data)
+      , _dims(dims) {
+    }
+
+
+    template<typename _U = U,
+             typename = typename std::enable_if<(sizeof(_U), M > 1)>::type>
+    subdimension<U, M - 1>
+    operator[](size_type pos) {
+      return subdimension<U, M - 1>(
+        _data + pos * (_dims + M - 1),
+        _dims);
+    }
+
+    template<typename _U = U,
+             typename = typename std::enable_if<(sizeof(_U), M == 1)>::type>
+    reference operator[](size_type pos) {
+      return *(_data + pos);
+    }
+
+
+    template<typename _U = U,
+             typename = typename std::enable_if<(sizeof(_U), M > 1)>::type>
+    const subdimension<U, M - 1>
+    operator[](size_type pos) const {
+      return subdimension<U, M - 1>(
+        _data + pos * (_dims + M - 1),
+        _dims);
+    }
+
+    template<typename _U = U,
+             typename = typename std::enable_if<(sizeof(_U), M == 1)>::type>
+    const_reference operator[](size_type pos) const {
+      return *(_data + pos);
+    }
+
+  private:
+    U* _data;
+    const size_t* _dims;
+  };
 
 public:
   hypervector()
