@@ -21,12 +21,13 @@ private:
   class subdimension
   {
   public:
-    subdimension(U* data, const size_t* dims)
+    subdimension(U* data, const size_type* dims)
       : _data(data)
       , _dims(dims) {
     }
 
 
+    // operator[](size_type pos)
     template<typename _U = U,
              typename = typename std::enable_if<(sizeof(_U), M > 1)>::type>
     subdimension<U, M - 1>
@@ -43,6 +44,7 @@ private:
     }
 
 
+    // operator[](size_type pos) const
     template<typename _U = U,
              typename = typename std::enable_if<(sizeof(_U), M > 1)>::type>
     const subdimension<U, M - 1>
@@ -60,7 +62,7 @@ private:
 
   private:
     U* _data;
-    const size_t* _dims;
+    const size_type* _dims;
   };
 
 public:
@@ -167,7 +169,7 @@ public:
 
   size_type size() const {
     return std::accumulate(std::begin(_dims), std::end(_dims), 1,
-      [](size_t prod, size_t dim) -> size_t {
+      [](size_type prod, size_type dim) -> size_type {
         return prod * dim;
       });
   }
@@ -216,9 +218,7 @@ private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
   _assign(size_type dim1, Args&&... args) {
-
     _dims[N - sizeof...(Args)] = dim1;
-
     _assign(std::forward<Args>(args)...);
   }
 
