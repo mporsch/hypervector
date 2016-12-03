@@ -41,4 +41,11 @@ int main(int argc, char** argv) {
         for (size_t z = 0; z < hvec4.size(3); ++z)
           hvec4.at(w, x, y, z) = std::to_string(i++);
   std::cout << hvec4 << "\n\n";
+
+  for (size_t w = 0; w < hvec4.size(0); ++w)
+      for (size_t x = 0; x < hvec4.size(1); ++x)
+        for (size_t y = 0; y < hvec4.size(2); ++y)
+          for (size_t z = 0; z < hvec4.size(3); ++z)
+            hvec4[w][x][y][z] = std::to_string(--i);
+  std::cout << hvec4 << "\n\n";
 }
