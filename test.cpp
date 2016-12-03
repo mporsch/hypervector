@@ -3,26 +3,16 @@
 
 #include "hypervector.h"
 
-std::ostream& operator<<(std::ostream &os, const hypervector<std::string, 3>& hvec3) {
-  os << "size()=" << hvec3.size()
-    << ", size(0)=" << hvec3.size(0)
-    << ", size(1)=" << hvec3.size(1)
-    << ", size(2)=" << hvec3.size(2) << std::endl;
-  for (auto&&e : hvec3)
-    os << e << std::endl;
-  return os;
-}
+template<typename T, size_t N>
+std::ostream& operator<<(std::ostream &os, const hypervector<T, N>& hvec) {
+  std::cout << "dims = { ";
+  for (size_t dim = 0; dim < N; ++dim)
+    std::cout << hvec.size(dim) << " ";
+  std::cout << "}\n";
 
-std::ostream& operator<<(std::ostream &os, const hypervector<std::string, 2>& hvec2) {
-  os << "size()=" << hvec2.size()
-    << ", size(0)=" << hvec2.size(0)
-    << ", size(1)=" << hvec2.size(1) << std::endl;
-  for (int x = 0; x < hvec2.size(0); ++x) {
-    for (int y = 0; y < hvec2.size(1); ++y) {
-      os << hvec2.at(x, y) << " ";
-    }
-    os << std::endl;
-  }
+  for (auto it = std::begin(hvec); it != std::end(hvec); ++it)
+    os << *it << " ";
+
   return os;
 }
 
