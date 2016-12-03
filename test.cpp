@@ -33,12 +33,12 @@ int main(int argc, char** argv) {
   hvec3.resize(3, 3, 3);
   std::cout << hvec3 << std::endl;
 
-  hypervector<std::string, 2> hvec2(2, 6, "0");
-  std::cout << hvec2 << std::endl;
-
+  hypervector<std::string, 4> hvec4(5, 4, 3, 2, "0");
   int i = 0;
-  for (int x = 0; x < hvec2.size(0); ++x)
-    for (int y = 0; y < hvec2.size(1); ++y)
-      hvec2[x][y] = std::to_string(i++);
-  std::cout << hvec2 << std::endl;
+  for (size_t w = 0; w < hvec4.size(0); ++w)
+    for (size_t x = 0; x < hvec4.size(1); ++x)
+      for (size_t y = 0; y < hvec4.size(2); ++y)
+        for (size_t z = 0; z < hvec4.size(3); ++z)
+          hvec4.at(w, x, y, z) = std::to_string(i++);
+  std::cout << hvec4 << "\n\n";
 }
