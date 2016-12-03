@@ -21,9 +21,10 @@ private:
   class subdimension
   {
   public:
-    subdimension(U* data, const size_type* dims)
+    subdimension(U* data, const size_type* dims, size_type indexOfSum)
       : _data(data)
-      , _dims(dims) {
+      , _dims(dims)
+      , _indexOfSum(indexOfSum) {
     }
 
 
@@ -33,14 +34,15 @@ private:
     subdimension<U, M - 1>
     operator[](size_type pos) {
       return subdimension<U, M - 1>(
-        _data + pos * (_dims + M - 1),
-        _dims);
+        _data,
+        _dims + 1,
+        pos + _dims[0] * _indexOfSum);
     }
 
     template<typename _U = U,
              typename = typename std::enable_if<(sizeof(_U), M == 1)>::type>
     reference operator[](size_type pos) {
-      return *(_data + pos);
+      return *(_data + pos + _dims[0] * _indexOfSum);
     }
 
 
@@ -50,19 +52,21 @@ private:
     const subdimension<U, M - 1>
     operator[](size_type pos) const {
       return subdimension<U, M - 1>(
-        _data + pos * (_dims + M - 1),
-        _dims);
+        _data,
+        _dims + 1,
+        pos + _dims[0] * _indexOfSum);
     }
 
     template<typename _U = U,
              typename = typename std::enable_if<(sizeof(_U), M == 1)>::type>
     const_reference operator[](size_type pos) const {
-      return *(_data + pos);
+      return *(_data + pos + _dims[0] * _indexOfSum);
     }
 
   private:
     U* _data;
     const size_type* _dims;
+    size_type _indexOfSum;
   };
 
 public:
@@ -139,8 +143,9 @@ public:
   subdimension<T, N - 1>
   operator[](size_type pos) {
     return subdimension<T, N - 1>(
-      &_vec[pos * _dims[N - 1]],
-      &_dims[0]);
+      _vec.data(),
+      _dims + 1,
+      pos);
   }
 
   template<typename _T = T,
@@ -156,8 +161,9 @@ public:
   const subdimension<T, N - 1>
   operator[](size_type pos) const {
     return subdimension<T, N - 1>(
-      &_vec[pos * _dims[N - 1]],
-      &_dims[0]);
+      _vec.data(),
+      _dims + 1,
+      pos);
   }
 
   template<typename _T = T,
