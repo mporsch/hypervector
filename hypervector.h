@@ -119,17 +119,17 @@ public:
 
   // at(size_type pos)
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) == N - 1, reference>::type
-  at(size_type dim1, Args&&... args) {
-    return _at(dim1, std::forward<Args>(args)...);
+  typename std::enable_if<sizeof...(Args) == N, reference>::type
+  at(Args&&... args) {
+    return _vec.at(_indexOf(std::forward<Args>(args)...));
   }
 
 
   // at(size_type pos) const
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) == N - 1, const_reference>::type
-  at(size_type dim1, Args&&... args) const {
-    return _at(dim1, std::forward<Args>(args)...);
+  typename std::enable_if<sizeof...(Args) == N, const_reference>::type
+  at(Args&&... args) const {
+    return _vec.at(_indexOf(std::forward<Args>(args)...));
   }
 
 
@@ -228,24 +228,13 @@ private:
 
 
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, reference>::type
-  _at(size_type dim1, size_type dim2, Args&&... args) {
-    return _at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
+  typename std::enable_if<sizeof...(Args) <= N - 2, size_type>::type
+  _indexOf(size_type sum, size_type dim, Args&&... args) const {
+    return _indexOf(dim + _dims[N - sizeof...(Args) - 1] * sum, std::forward<Args>(args)...);
   }
 
-  reference _at(size_type dimN) {
-    return _vec.at(dimN);
-  }
-
-
-  template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 2, const_reference>::type
-  _at(size_type dim1, size_type dim2, Args&&... args) const {
-    return _at(dim1 * _dims[sizeof...(Args) + 1] + dim2, std::forward<Args>(args)...);
-  }
-
-  const_reference _at(size_type dimN) const {
-    return _vec.at(dimN);
+  size_type _indexOf(size_type sum) const {
+    return sum;
   }
 
 private:
