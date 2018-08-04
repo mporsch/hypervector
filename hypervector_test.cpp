@@ -19,16 +19,16 @@ std::ostream& operator<<(std::ostream &os, const hypervector<T, N>& hvec) {
 int main(int /*argc*/, char** /*argv*/) {
   {
     hypervector<std::string, 3> hvec(1, 2, 3, "ho");
-    std::cout << "construct(1, 2, 3):\n" << hvec << "\n\n";
+    std::cout << "construct(1, 2, 3, \"ho\"):\n" << hvec << "\n\n";
 
     hvec.assign(3, 2, 1, "hi");
-    std::cout << "assign(3, 2, 1):\n" << hvec << "\n\n";
+    std::cout << "assign(3, 2, 1, \"hi\"):\n" << hvec << "\n\n";
 
     hvec.resize(1, 1, 1, "he");
-    std::cout << "resize(1, 1, 1):\n" << hvec << "\n\n";
+    std::cout << "resize(1, 1, 1, \"he\"):\n" << hvec << "\n\n";
 
     hvec.resize(2, 2, 2, "ha");
-    std::cout << "resize(2, 2, 2):\n" << hvec << "\n\n";
+    std::cout << "resize(2, 2, 2, \"ha\"):\n" << hvec << "\n\n";
 
     hvec.resize(3, 3, 3);
     std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
