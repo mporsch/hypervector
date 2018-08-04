@@ -2,6 +2,7 @@
 #define HYPERVECTOR_H
 
 #include <cstddef>
+#include <iostream>
 #include <numeric>
 #include <vector>
 
@@ -73,6 +74,22 @@ namespace hypervector_detail {
     const size_type* _offsets;
     T* _data;
   };
+
+  template<typename T, size_t N>
+  std::ostream &operator<<(std::ostream &os, const subdimension<T, N>& subd) {
+    auto size = subd.size(0);
+    for(decltype(size) i = 0; i < size; ++i)
+      os << "(" << subd[i] << ")" << (i != size - 1 ? ", " : "");
+    return os;
+  }
+
+  template<typename T>
+  std::ostream &operator<<(std::ostream &os, const subdimension<T, 1>& subd) {
+    auto size = subd.size(0);
+    for(decltype(size) i = 0; i < size; ++i)
+      os << subd[i] << (i != size - 1 ? ", " : "");
+    return os;
+  }
 } // namespace hypervector_detail
 
 template<typename T, size_t N>
@@ -278,5 +295,21 @@ private:
   size_type _offsets[N];
   container _vec;
 };
+
+template<typename T, size_t N>
+std::ostream &operator<<(std::ostream &os, const hypervector<T, N>& hvec) {
+  auto size = hvec.size(0);
+  for(decltype(size) i = 0; i < size; ++i)
+    os << "(" << hvec[i] << ")" << (i != size - 1 ? ", " : "");
+  return os;
+}
+
+template<typename T>
+std::ostream &operator<<(std::ostream &os, const hypervector<T, 1>& hvec) {
+  auto size = hvec.size(0);
+  for(decltype(size) i = 0; i < size; ++i)
+    os << hvec[i] << (i != size - 1 ? ", " : "");
+  return os;
+}
 
 #endif // HYPERVECTOR_H

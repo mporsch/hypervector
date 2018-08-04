@@ -1,20 +1,7 @@
-#include <iostream>
-#include <string>
-
 #include "hypervector.h"
 
-template<typename T, size_t N>
-std::ostream& operator<<(std::ostream &os, const hypervector<T, N>& hvec) {
-  std::cout << "hypervector( ";
-  for (size_t dim = 0; dim < N; ++dim)
-    std::cout << hvec.size(dim) << " ";
-  std::cout << ") : ";
-
-  for (auto it = std::begin(hvec); it != std::end(hvec); ++it)
-    os << *it << " ";
-
-  return os;
-}
+#include <iostream>
+#include <string>
 
 int main(int /*argc*/, char** /*argv*/) {
   {
