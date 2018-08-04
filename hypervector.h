@@ -2,8 +2,8 @@
 #define HYPERVECTOR_H
 
 #include <cstddef>
-#include <vector>
 #include <numeric>
+#include <vector>
 
 template<typename T, size_t N>
 class hypervector
@@ -257,4 +257,3 @@ private:
 };
 
 #endif // HYPERVECTOR_H
-
