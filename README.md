@@ -7,4 +7,4 @@ The number of dimensions is passed as template parameter. The interface is desig
 
 Implemented as C++11 variadic template. 
 
-Build test using `$ g++ -o test test.cpp -std=c++11`
+Build test using `$ g++ -o hypervector_test hypervector_test.cpp -std=c++11`
