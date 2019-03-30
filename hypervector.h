@@ -27,8 +27,8 @@ namespace hypervector_detail {
 
 
     // operator[](size_type pos)
-    template<typename _U = T,
-             typename = typename std::enable_if<(sizeof(_U), N > 1)>::type>
+    template<size_t N_ = N,
+             typename = typename std::enable_if<(N_ > 1)>::type>
     subdimension<T, N - 1>
     operator[](size_type pos) {
       return subdimension<T, N - 1>(
@@ -37,16 +37,16 @@ namespace hypervector_detail {
         data_ + pos * offsets_[0]);
     }
 
-    template<typename _U = T,
-             typename = typename std::enable_if<(sizeof(_U), N == 1)>::type>
+    template<size_t N_ = N,
+             typename = typename std::enable_if<(N_ == 1)>::type>
     reference operator[](size_type pos) {
       return *(data_ + pos);
     }
 
 
     // operator[](size_type pos) const
-    template<typename _U = T,
-             typename = typename std::enable_if<(sizeof(_U), N > 1)>::type>
+    template<size_t N_ = N,
+             typename = typename std::enable_if<(N_ > 1)>::type>
     const subdimension<T, N - 1>
     operator[](size_type pos) const {
       return subdimension<T, N - 1>(
@@ -55,8 +55,8 @@ namespace hypervector_detail {
         data_ + pos * offsets_[0]);
     }
 
-    template<typename _U = T,
-             typename = typename std::enable_if<(sizeof(_U), N == 1)>::type>
+    template<size_t N_ = N,
+             typename = typename std::enable_if<(N_ == 1)>::type>
     const_reference operator[](size_type pos) const {
       return *(data_ + pos);
     }
@@ -173,8 +173,8 @@ public:
 
 
   // operator[](size_type pos)
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
+  template<size_t N_ = N,
+           typename = typename std::enable_if<(N_ > 1)>::type>
   hypervector_detail::subdimension<T, N - 1>
   operator[](size_type pos) {
     return hypervector_detail::subdimension<T, N - 1>(
@@ -183,16 +183,16 @@ public:
       vec_.data() + pos * offsets_[0]);
   }
 
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
+  template<size_t N_ = N,
+           typename = typename std::enable_if<(N_ == 1)>::type>
   reference operator[](size_type pos) {
     return vec_[pos];
   }
 
 
   // operator[](size_type pos) const
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N > 1)>::type>
+  template<size_t N_ = N,
+           typename = typename std::enable_if<(N_ > 1)>::type>
   const hypervector_detail::subdimension<T, N - 1>
   operator[](size_type pos) const {
     return hypervector_detail::subdimension<T, N - 1>(
@@ -201,8 +201,8 @@ public:
       const_cast<T *>(vec_.data()) + pos * offsets_[0]);
   }
 
-  template<typename _T = T,
-           typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
+  template<size_t N_ = N,
+           typename = typename std::enable_if<(N_ == 1)>::type>
   const_reference operator[](size_type pos) const {
     return vec_[pos];
   }
