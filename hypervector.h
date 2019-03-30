@@ -20,9 +20,9 @@ namespace hypervector_detail {
 
   public:
     subdimension(const size_type* dims, const size_type* offsets, T* data)
-      : _dims(dims)
-      , _offsets(offsets)
-      , _data(data) {
+      : dims_(dims)
+      , offsets_(offsets)
+      , data_(data) {
     }
 
 
@@ -32,15 +32,15 @@ namespace hypervector_detail {
     subdimension<T, N - 1>
     operator[](size_type pos) {
       return subdimension<T, N - 1>(
-        _dims + 1,
-        _offsets + 1,
-        _data + pos * _offsets[0]);
+        dims_ + 1,
+        offsets_ + 1,
+        data_ + pos * offsets_[0]);
     }
 
     template<typename _U = T,
              typename = typename std::enable_if<(sizeof(_U), N == 1)>::type>
     reference operator[](size_type pos) {
-      return *(_data + pos);
+      return *(data_ + pos);
     }
 
 
@@ -50,29 +50,29 @@ namespace hypervector_detail {
     const subdimension<T, N - 1>
     operator[](size_type pos) const {
       return subdimension<T, N - 1>(
-        _dims + 1,
-        _offsets + 1,
-        _data + pos * _offsets[0]);
+        dims_ + 1,
+        offsets_ + 1,
+        data_ + pos * offsets_[0]);
     }
 
     template<typename _U = T,
              typename = typename std::enable_if<(sizeof(_U), N == 1)>::type>
     const_reference operator[](size_type pos) const {
-      return *(_data + pos);
+      return *(data_ + pos);
     }
 
 
     size_type size(size_type dim) const {
       if (dim < N)
-        return _dims[dim];
+        return dims_[dim];
       else
         return 0;
     }
 
   private:
-    const size_type* _dims;
-    const size_type* _offsets;
-    T* _data;
+    const size_type* dims_;
+    const size_type* offsets_;
+    T* data_;
   };
 
   template<typename T, size_t N>
@@ -105,8 +105,8 @@ public:
 
 public:
   hypervector()
-    : _dims{0}
-    , _offsets{0} {
+    : dims_{0}
+    , offsets_{0} {
   }
 
 
@@ -115,7 +115,7 @@ public:
   hypervector(
     typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
     Args&&... args) {
-    _assign(dim1, std::forward<Args>(args)...);
+    assign_(dim1, std::forward<Args>(args)...);
   }
 
 
@@ -124,7 +124,7 @@ public:
   hypervector(
     typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
     Args&&... args) {
-    _assign(dim1, std::forward<Args>(args)..., T());
+    assign_(dim1, std::forward<Args>(args)..., T());
   }
 
 
@@ -136,7 +136,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
   resize(size_type dim1, Args&&... args) {
-    _resize(dim1, std::forward<Args>(args)...);
+    resize_(dim1, std::forward<Args>(args)...);
   }
 
 
@@ -144,7 +144,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N - 1, void>::type
   resize(size_type dim1, Args&&... args) {
-    _resize(dim1, std::forward<Args>(args)..., T());
+    resize_(dim1, std::forward<Args>(args)..., T());
   }
 
 
@@ -152,7 +152,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
   assign(size_type dim1, Args&&... args) {
-    _assign(dim1, std::forward<Args>(args)...);
+    assign_(dim1, std::forward<Args>(args)...);
   }
 
 
@@ -160,7 +160,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, reference>::type
   at(Args&&... args) {
-    return _vec.at(_indexOf(std::forward<Args>(args)...));
+    return vec_.at(indexOf_(std::forward<Args>(args)...));
   }
 
 
@@ -168,7 +168,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, const_reference>::type
   at(Args&&... args) const {
-    return _vec.at(_indexOf(std::forward<Args>(args)...));
+    return vec_.at(indexOf_(std::forward<Args>(args)...));
   }
 
 
@@ -178,15 +178,15 @@ public:
   hypervector_detail::subdimension<T, N - 1>
   operator[](size_type pos) {
     return hypervector_detail::subdimension<T, N - 1>(
-      _dims + 1,
-      _offsets + 1,
-      _vec.data() + pos * _offsets[0]);
+      dims_ + 1,
+      offsets_ + 1,
+      vec_.data() + pos * offsets_[0]);
   }
 
   template<typename _T = T,
            typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
   reference operator[](size_type pos) {
-    return _vec[pos];
+    return vec_[pos];
   }
 
 
@@ -196,20 +196,20 @@ public:
   const hypervector_detail::subdimension<T, N - 1>
   operator[](size_type pos) const {
     return hypervector_detail::subdimension<T, N - 1>(
-      _dims + 1,
-      _offsets + 1,
-      const_cast<T *>(_vec.data()) + pos * _offsets[0]);
+      dims_ + 1,
+      offsets_ + 1,
+      const_cast<T *>(vec_.data()) + pos * offsets_[0]);
   }
 
   template<typename _T = T,
            typename = typename std::enable_if<(sizeof(_T), N == 1)>::type>
   const_reference operator[](size_type pos) const {
-    return _vec[pos];
+    return vec_[pos];
   }
 
 
   size_type size() const {
-    return std::accumulate(std::begin(_dims), std::end(_dims), 1,
+    return std::accumulate(std::begin(dims_), std::end(dims_), 1,
       [](size_type prod, size_type dim) -> size_type {
         return prod * dim;
       });
@@ -218,82 +218,82 @@ public:
 
   size_type size(size_type dim) const {
     if (dim < N)
-      return _dims[dim];
+      return dims_[dim];
     else
       return 0;
   }
 
 
   iterator begin() {
-    return _vec.begin();
+    return vec_.begin();
   }
 
 
   iterator end() {
-    return _vec.end();
+    return vec_.end();
   }
 
 
   const_iterator begin() const {
-    return _vec.cbegin();
+    return vec_.cbegin();
   }
 
 
   const_iterator end() const {
-    return _vec.cend();
+    return vec_.cend();
   }
 
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  _resize(size_type dim1, Args&&... args) {
-    _dims[N - sizeof...(Args)] = dim1;
-    _resize(std::forward<Args>(args)...);
+  resize_(size_type dim1, Args&&... args) {
+    dims_[N - sizeof...(Args)] = dim1;
+    resize_(std::forward<Args>(args)...);
   }
 
-  void _resize(T&& val) {
-    _initOffsets();
-    _vec.resize(size(), std::forward<T>(val));
+  void resize_(T&& val) {
+    initOffsets_();
+    vec_.resize(size(), std::forward<T>(val));
   }
 
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  _assign(size_type dim1, Args&&... args) {
-    _dims[N - sizeof...(Args)] = dim1;
-    _assign(std::forward<Args>(args)...);
+  assign_(size_type dim1, Args&&... args) {
+    dims_[N - sizeof...(Args)] = dim1;
+    assign_(std::forward<Args>(args)...);
   }
 
-  void _assign(T&& val) {
-    _initOffsets();
-    _vec.assign(size(), std::forward<T>(val));
+  void assign_(T&& val) {
+    initOffsets_();
+    vec_.assign(size(), std::forward<T>(val));
   }
 
 
-  void _initOffsets() {
+  void initOffsets_() {
     size_type prod = 1;
     for (size_type i = N - 1; i > 0; --i) {
-      _offsets[i] = prod;
-      prod *= _dims[i];
+      offsets_[i] = prod;
+      prod *= dims_[i];
     }
-    _offsets[0] = prod;
+    offsets_[0] = prod;
   }
 
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 1, size_type>::type
-  _indexOf(size_type dim, Args&&... args) const {
-    return dim * _offsets[N - sizeof...(Args) - 1] + _indexOf(std::forward<Args>(args)...);
+  indexOf_(size_type dim, Args&&... args) const {
+    return dim * offsets_[N - sizeof...(Args) - 1] + indexOf_(std::forward<Args>(args)...);
   }
 
-  size_type _indexOf(size_type dim) const {
+  size_type indexOf_(size_type dim) const {
     return dim;
   }
 
 private:
-  size_type _dims[N];
-  size_type _offsets[N];
-  container _vec;
+  size_type dims_[N];
+  size_type offsets_[N];
+  container vec_;
 };
 
 template<typename T, size_t N>
