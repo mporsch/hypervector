@@ -18,6 +18,8 @@ namespace hypervector_detail {
     using reference       = typename hypervector<T, N>::reference;
     using const_reference = typename hypervector<T, N>::const_reference;
     using size_type       = typename hypervector<T, N>::size_type;
+    using iterator        = T*;
+    using const_iterator  = const T*;
     using pointer         = typename std::conditional<IsConst, const T*, T*>::type;
 
   public:
@@ -64,11 +66,38 @@ namespace hypervector_detail {
     }
 
 
+    size_type size() const {
+      return std::accumulate(dims_, dims_ + N, 1,
+        [](size_type prod, size_type dim) -> size_type {
+          return prod * dim;
+        });
+    }
+
     size_type size(size_type dim) const {
       if (dim < N)
         return dims_[dim];
       else
         return 0;
+    }
+
+
+    iterator begin() {
+      return data_;
+    }
+
+
+    iterator end() {
+      return data_ + size();
+    }
+
+
+    const_iterator begin() const {
+      return data_;
+    }
+
+
+    const_iterator end() const {
+      return data_ + size();
     }
 
   private:
