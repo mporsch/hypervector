@@ -4,22 +4,24 @@
 #include <cstddef>
 #include <iostream>
 #include <numeric>
+#include <type_traits>
 #include <vector>
 
 template<typename T, size_t N>
 class hypervector;
 
 namespace hypervector_detail {
-  template<typename T, size_t N>
+  template<typename T, size_t N, bool IsConst>
   class subdimension
   {
   public:
     using reference       = typename hypervector<T, N>::reference;
     using const_reference = typename hypervector<T, N>::const_reference;
     using size_type       = typename hypervector<T, N>::size_type;
+    using pointer         = typename std::conditional<IsConst, const T*, T*>::type;
 
   public:
-    subdimension(const size_type* dims, const size_type* offsets, T* data)
+    subdimension(const size_type* dims, const size_type* offsets, pointer data)
       : dims_(dims)
       , offsets_(offsets)
       , data_(data) {
@@ -29,9 +31,9 @@ namespace hypervector_detail {
     // operator[](size_type pos)
     template<size_t N_ = N,
              typename = typename std::enable_if<(N_ > 1)>::type>
-    subdimension<T, N - 1>
+    subdimension<T, N - 1, IsConst>
     operator[](size_type pos) {
-      return subdimension<T, N - 1>(
+      return subdimension<T, N - 1, IsConst>(
         dims_ + 1,
         offsets_ + 1,
         data_ + pos * offsets_[0]);
@@ -47,9 +49,9 @@ namespace hypervector_detail {
     // operator[](size_type pos) const
     template<size_t N_ = N,
              typename = typename std::enable_if<(N_ > 1)>::type>
-    const subdimension<T, N - 1>
+    subdimension<T, N - 1, IsConst>
     operator[](size_type pos) const {
-      return subdimension<T, N - 1>(
+      return subdimension<T, N - 1, IsConst>(
         dims_ + 1,
         offsets_ + 1,
         data_ + pos * offsets_[0]);
@@ -72,19 +74,19 @@ namespace hypervector_detail {
   private:
     const size_type* dims_;
     const size_type* offsets_;
-    T* data_;
+    pointer data_;
   };
 
-  template<typename T, size_t N>
-  std::ostream &operator<<(std::ostream &os, const subdimension<T, N>& subd) {
+  template<typename T, size_t N, bool IsConst>
+  std::ostream &operator<<(std::ostream &os, const subdimension<T, N, IsConst>& subd) {
     auto size = subd.size(0);
     for(decltype(size) i = 0; i < size; ++i)
       os << "(" << subd[i] << ")" << (i != size - 1 ? ", " : "");
     return os;
   }
 
-  template<typename T>
-  std::ostream &operator<<(std::ostream &os, const subdimension<T, 1>& subd) {
+  template<typename T, bool IsConst>
+  std::ostream &operator<<(std::ostream &os, const subdimension<T, 1, IsConst>& subd) {
     auto size = subd.size(0);
     for(decltype(size) i = 0; i < size; ++i)
       os << subd[i] << (i != size - 1 ? ", " : "");
@@ -175,9 +177,9 @@ public:
   // operator[](size_type pos)
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ > 1)>::type>
-  hypervector_detail::subdimension<T, N - 1>
+  hypervector_detail::subdimension<T, N - 1, false>
   operator[](size_type pos) {
-    return hypervector_detail::subdimension<T, N - 1>(
+    return hypervector_detail::subdimension<T, N - 1, false>(
       dims_ + 1,
       offsets_ + 1,
       vec_.data() + pos * offsets_[0]);
@@ -193,12 +195,12 @@ public:
   // operator[](size_type pos) const
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ > 1)>::type>
-  const hypervector_detail::subdimension<T, N - 1>
+  hypervector_detail::subdimension<T, N - 1, true>
   operator[](size_type pos) const {
-    return hypervector_detail::subdimension<T, N - 1>(
+    return hypervector_detail::subdimension<T, N - 1, true>(
       dims_ + 1,
       offsets_ + 1,
-      const_cast<T *>(vec_.data()) + pos * offsets_[0]);
+      vec_.data() + pos * offsets_[0]);
   }
 
   template<size_t N_ = N,
