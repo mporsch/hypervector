@@ -4,7 +4,46 @@
 #include <string>
 
 int main(int /*argc*/, char** /*argv*/) {
+  bool success = true;
+
   {
+    int test[4][3][2];
+    hypervector<int, 3> hvec(4, 3, 2);
+
+    int i = 0;
+    for (size_t x = 0; x < 4; ++x) {
+      for (size_t y = 0; y < 3; ++y) {
+        for (size_t z = 0; z < 2; ++z) {
+          test[x][y][z] = i;
+          hvec[x][y][z] = i++;
+
+          // test operator[] and at()
+          success &= (test[x][y][z] == hvec[x][y][z]);
+          success &= (test[x][y][z] == hvec.at(x, y, z));
+        }
+      }
+    }
+
+    { // test begin() and end() globally
+      auto firstArray = &test[0][0][0];
+      const auto lastArray = firstArray + 4 * 3 * 2;
+      auto firstHvec = std::begin(hvec);
+      const auto lastHvec = std::end(hvec);
+      for (; firstArray != lastArray && firstHvec != lastHvec; ++firstArray, ++firstHvec)
+        success &= (*firstArray == *firstHvec);
+    }
+
+    { // test begin() and end() on subdimensions
+      auto firstArray = &test[3][0][0];
+      const auto lastArray = firstArray + 3 * 2;
+      auto firstHvec = std::begin(hvec[3]);
+      const auto lastHvec = std::end(hvec[3]);
+      for (; firstArray != lastArray && firstHvec != lastHvec; ++firstArray, ++firstHvec)
+        success &= (*firstArray == *firstHvec);
+    }
+  }
+
+  { // fool around with assign() and resize()
     hypervector<std::string, 3> hvec(1, 2, 3, "ho");
     std::cout << "construct(1, 2, 3, \"ho\"):\n" << hvec << "\n\n";
 
@@ -21,7 +60,7 @@ int main(int /*argc*/, char** /*argv*/) {
     std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
   }
 
-  {
+  { // fool around with operator[] and at()
     hypervector<std::string, 4> hvec(5, 4, 3, 2, "0");
     int i = 0;
     for (size_t w = 0; w < hvec.size(0); ++w)
@@ -39,5 +78,5 @@ int main(int /*argc*/, char** /*argv*/) {
     std::cout << "operator[w][x][y][z]:\n"  << hvec << "\n\n";
   }
 
-  return EXIT_SUCCESS;
+  return (success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
