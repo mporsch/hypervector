@@ -6,6 +6,43 @@
 int main(int /*argc*/, char** /*argv*/) {
   bool success = true;
 
+  { // test the different constructors, assign() and resize()
+    {
+      hypervector<std::string, 3> hvec;
+      success &= (hvec.size() == 0);
+      std::cout << "construct():\n" << hvec << "\n\n";
+    }
+
+    {
+      hypervector<std::string, 3> hvec(1, 2, 3);
+      success &= (hvec.size(0) == 1);
+      success &= (hvec.size(1) == 2);
+      success &= (hvec.size(2) == 3);
+      success &= (hvec.size() == 1 * 2 * 3);
+      std::cout << "construct(1, 2, 3):\n" << hvec << "\n\n";
+    }
+
+    hypervector<std::string, 3> hvec(1, 2, 3, "ho");
+    success &= (hvec.size() == 1 * 2 * 3);
+    std::cout << "construct(1, 2, 3, \"ho\"):\n" << hvec << "\n\n";
+
+    hvec.assign(3, 2, 1, "hi");
+    success &= (hvec.size() == 3 * 2 * 1);
+    std::cout << "assign(3, 2, 1, \"hi\"):\n" << hvec << "\n\n";
+
+    hvec.resize(1, 1, 1, "he");
+    success &= (hvec.size() == 1 * 1 * 1);
+    std::cout << "resize(1, 1, 1, \"he\"):\n" << hvec << "\n\n";
+
+    hvec.resize(2, 2, 2, "ha");
+    success &= (hvec.size() == 2 * 2 * 2);
+    std::cout << "resize(2, 2, 2, \"ha\"):\n" << hvec << "\n\n";
+
+    hvec.resize(3, 3, 3);
+    success &= (hvec.size() == 3 * 3 * 3);
+    std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
+  }
+
   {
     int test[4][3][2];
     hypervector<int, 3> hvec(4, 3, 2);
@@ -41,23 +78,6 @@ int main(int /*argc*/, char** /*argv*/) {
       for (; firstArray != lastArray && firstHvec != lastHvec; ++firstArray, ++firstHvec)
         success &= (*firstArray == *firstHvec);
     }
-  }
-
-  { // fool around with assign() and resize()
-    hypervector<std::string, 3> hvec(1, 2, 3, "ho");
-    std::cout << "construct(1, 2, 3, \"ho\"):\n" << hvec << "\n\n";
-
-    hvec.assign(3, 2, 1, "hi");
-    std::cout << "assign(3, 2, 1, \"hi\"):\n" << hvec << "\n\n";
-
-    hvec.resize(1, 1, 1, "he");
-    std::cout << "resize(1, 1, 1, \"he\"):\n" << hvec << "\n\n";
-
-    hvec.resize(2, 2, 2, "ha");
-    std::cout << "resize(2, 2, 2, \"ha\"):\n" << hvec << "\n\n";
-
-    hvec.resize(3, 3, 3);
-    std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
   }
 
   { // fool around with operator[] and at()
