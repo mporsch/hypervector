@@ -20,17 +20,17 @@ class hypervector_view
 {
 public:
   using size_type = typename hypervector_detail<T>::size_type;
-  using storage_pointer = typename std::conditional<IsConst, const T*, T*>::type;
-  using reference = T&;
-  using const_reference = const T&;
-  using iterator = storage_pointer;
-  using const_iterator = const T*;
+  using container = typename hypervector_detail<T>::container;
+  using const_reference = typename container::const_reference;
+  using reference = typename container::reference;
+  using const_iterator = typename container::const_iterator;
+  using iterator = typename std::conditional<IsConst, const_iterator, typename container::iterator>::type;
 
 public:
-  hypervector_view(const size_type* dims, const size_type* offsets, storage_pointer data)
+  hypervector_view(const size_type* dims, const size_type* offsets, iterator first)
     : dims_(dims)
     , offsets_(offsets)
-    , data_(data) {
+    , first_(first) {
   }
 
 
@@ -38,7 +38,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, reference>::type
   at(Args&&... args) {
-    return data_[indexOf_(std::forward<Args>(args)...)];
+    return *(first_ + indexOf_(std::forward<Args>(args)...));
   }
 
 
@@ -46,7 +46,7 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, const_reference>::type
   at(Args&&... args) const {
-    return data_[indexOf_(std::forward<Args>(args)...)];
+    return *(first_ + indexOf_(std::forward<Args>(args)...));
   }
 
 
@@ -58,13 +58,13 @@ public:
     return hypervector_view<T, N - 1, IsConst>(
       dims_ + 1,
       offsets_ + 1,
-      data_ + pos * offsets_[0]);
+      first_ + pos * offsets_[0]);
   }
 
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ == 1)>::type>
   reference operator[](size_type pos) {
-    return *(data_ + pos);
+    return *(first_ + pos);
   }
 
 
@@ -76,13 +76,13 @@ public:
     return hypervector_view<T, N - 1, true>(
       dims_ + 1,
       offsets_ + 1,
-      data_ + pos * offsets_[0]);
+      first_ + pos * offsets_[0]);
   }
 
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ == 1)>::type>
   const_reference operator[](size_type pos) const {
-    return *(data_ + pos);
+    return *(first_ + pos);
   }
 
 
@@ -103,29 +103,29 @@ public:
 
 
   iterator begin() {
-    return data_;
+    return first_;
   }
 
 
   iterator end() {
-    return data_ + size();
+    return first_ + size();
   }
 
 
   const_iterator begin() const {
-    return data_;
+    return first_;
   }
 
 
   const_iterator end() const {
-    return data_ + size();
+    return first_ + size();
   }
 
 
   // implicit conversion from non-const to const
   operator hypervector_view<T, N, true>() const
   {
-    return hypervector_view<T, N, true>(dims_, offsets_, data_);
+    return hypervector_view<T, N, true>(dims_, offsets_, first_);
   }
 
 protected:
@@ -142,7 +142,7 @@ protected:
 protected:
   const size_type* dims_;
   const size_type* offsets_;
-  storage_pointer data_;
+  iterator first_;
 };
 
 
@@ -159,7 +159,7 @@ public:
   // hypervector()
   /// create uninitialized container
   hypervector()
-    : base(dims_, offsets_, nullptr)
+    : base(dims_, offsets_, {})
     , dims_{0}
     , offsets_{0} {
   }
@@ -171,7 +171,7 @@ public:
   hypervector(
     typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
     Args&&... args)
-    : base(dims_, offsets_, nullptr) {
+    : base(dims_, offsets_, {}) {
     assign_(dim1, std::forward<Args>(args)...);
   }
 
@@ -182,7 +182,7 @@ public:
   hypervector(
     typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
     Args&&... args)
-    : base(dims_, offsets_, nullptr) {
+    : base(dims_, offsets_, {}) {
     assign_(dim1, std::forward<Args>(args)..., T());
   }
 
@@ -227,8 +227,8 @@ private:
 
   void resize_(T&& val) {
     initOffsets_();
-    vec_.resize(this->size(), std::forward<T>(val));
-    this->data_ = vec_.data();
+    vec_.resize(base::size(), std::forward<T>(val));
+    base::first_ = std::begin(vec_); // reset iterator after possible reallocation
   }
 
 
@@ -241,8 +241,8 @@ private:
 
   void assign_(T&& val) {
     initOffsets_();
-    vec_.assign(this->size(), std::forward<T>(val));
-    this->data_ = vec_.data();
+    vec_.assign(base::size(), std::forward<T>(val));
+    base::first_ = std::begin(vec_); // reset iterator after possible reallocation
   }
 
 
