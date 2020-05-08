@@ -225,9 +225,9 @@ private:
     resize_(std::forward<Args>(args)...);
   }
 
-  void resize_(T&& val) {
+  void resize_(const T& val) {
     initOffsets_();
-    vec_.resize(base::size(), std::forward<T>(val));
+    vec_.resize(base::size(), val);
     base::first_ = std::begin(vec_); // reset iterator after possible reallocation
   }
 
@@ -239,9 +239,9 @@ private:
     assign_(std::forward<Args>(args)...);
   }
 
-  void assign_(T&& val) {
+  void assign_(const T& val) {
     initOffsets_();
-    vec_.assign(base::size(), std::forward<T>(val));
+    vec_.assign(base::size(), val);
     base::first_ = std::begin(vec_); // reset iterator after possible reallocation
   }
 
