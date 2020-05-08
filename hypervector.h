@@ -1,6 +1,7 @@
 #ifndef HYPERVECTOR_H
 #define HYPERVECTOR_H
 
+#include <array>
 #include <cstddef>
 #include <iostream>
 #include <numeric>
@@ -27,6 +28,9 @@ public:
   using iterator = typename std::conditional<IsConst, const_iterator, typename container::iterator>::type;
 
 public:
+  hypervector_view() = default;
+
+
   hypervector_view(const size_type* dims, const size_type* offsets, iterator first)
     : dims_(dims)
     , offsets_(offsets)
@@ -159,19 +163,18 @@ public:
   // hypervector()
   /// create uninitialized container
   hypervector()
-    : base(dims_, offsets_, {})
-    , dims_{0}
+    : dims_{0}
     , offsets_{0} {
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
   }
 
 
   // hypervector(size_type count, const T& value)
   /// create container with given dimensions; values are initialized to given value
   template<typename ...Args>
-  hypervector(
-    typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
-    Args&&... args)
-    : base(dims_, offsets_, {}) {
+  hypervector(typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
+              Args&&... args) {
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)...);
   }
 
@@ -179,15 +182,48 @@ public:
   // hypervector(size_type count)
   /// create container with given dimensions; values are default initialized
   template<typename ...Args>
-  hypervector(
-    typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
-    Args&&... args)
-    : base(dims_, offsets_, {}) {
+  hypervector(typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
+              Args&&... args) {
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)..., T());
   }
 
 
   ~hypervector() {
+  }
+
+
+  hypervector(const hypervector& other)
+    : dims_(other.dims_)
+    , offsets_(other.offsets_)
+    , vec_(other.vec_) {
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+  }
+
+
+  hypervector(hypervector&& other)
+    : dims_(std::move(other.dims_))
+    , offsets_(std::move(other.offsets_))
+    , vec_(std::move(other.vec_)) {
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+  }
+
+
+  hypervector& operator=(const hypervector& other) {
+    dims_ = other.dims_;
+    offsets_ = other.offsets_;
+    vec_ = other.vec_;
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    return *this;
+  }
+
+
+  hypervector& operator=(hypervector&& other) {
+    dims_ = std::move(other.dims_);
+    offsets_ = std::move(other.offsets_);
+    vec_ = std::move(other.vec_);
+    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    return *this;
   }
 
 
@@ -228,7 +264,7 @@ private:
   void resize_(const T& val) {
     initOffsets_();
     vec_.resize(base::size(), val);
-    base::first_ = std::begin(vec_); // reset iterator after possible reallocation
+    base::first_ = vec_.begin(); // reset iterator after possible reallocation
   }
 
 
@@ -242,7 +278,7 @@ private:
   void assign_(const T& val) {
     initOffsets_();
     vec_.assign(base::size(), val);
-    base::first_ = std::begin(vec_); // reset iterator after possible reallocation
+    base::first_ = vec_.begin(); // reset iterator after possible reallocation
   }
 
 
@@ -256,8 +292,8 @@ private:
   }
 
 private:
-  size_type dims_[N];
-  size_type offsets_[N];
+  std::array<size_type, N> dims_;
+  std::array<size_type, N> offsets_;
   container vec_;
 };
 
