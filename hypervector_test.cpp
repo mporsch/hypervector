@@ -70,11 +70,13 @@ int main(int /*argc*/, char** /*argv*/) {
         success &= (*firstArray == *firstHvec);
     }
 
-    { // test begin() and end() on subdimensions
+    { // test begin() and end() on (const) subdimension
+      auto const subd = const_cast<const hypervector<int, 3>&>(hvec)[3];
+      static_assert(std::is_convertible<decltype(hvec[3]), decltype(subd)>::value, "const type mismatch");
       auto firstArray = &test[3][0][0];
       const auto lastArray = firstArray + 3 * 2;
-      auto firstHvec = std::begin(hvec[3]);
-      const auto lastHvec = std::end(hvec[3]);
+      auto firstHvec = std::begin(subd);
+      const auto lastHvec = std::end(subd);
       for (; firstArray != lastArray && firstHvec != lastHvec; ++firstArray, ++firstHvec)
         success &= (*firstArray == *firstHvec);
     }
