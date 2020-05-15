@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <iostream>
 #include <numeric>
+#include <stdexcept>
 #include <type_traits>
 #include <vector>
 
@@ -99,10 +100,9 @@ public:
 
 
   size_type size(size_type dim) const {
-    if (dim < N)
-      return dims_[dim];
-    else
-      return 0;
+    if(dim >= N)
+      throw std::out_of_range("hypervector_view::size");
+    return dims_[dim];
   }
 
 
@@ -136,6 +136,8 @@ protected:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 1, size_type>::type
   indexOf_(size_type dim, Args&&... args) const {
+    if(dim >= dims_[N - sizeof...(Args) - 1])
+      throw std::out_of_range("hypervector_view::at");
     return dim * offsets_[N - sizeof...(Args) - 1] + indexOf_(std::forward<Args>(args)...);
   }
 
@@ -155,7 +157,7 @@ template<typename T, size_t N>
 class hypervector : public hypervector_view<T, N, false>
 {
 public:
-  using base = hypervector_view<T, N, false>;
+  using view = hypervector_view<T, N, false>;
   using size_type = typename hypervector_detail<T>::size_type;
   using container = typename hypervector_detail<T>::container;
 
@@ -165,7 +167,7 @@ public:
   hypervector()
     : dims_{0}
     , offsets_{0} {
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
   }
 
 
@@ -174,7 +176,7 @@ public:
   template<typename ...Args>
   hypervector(typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
               Args&&... args) {
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)...);
   }
 
@@ -184,7 +186,7 @@ public:
   template<typename ...Args>
   hypervector(typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
               Args&&... args) {
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)..., T());
   }
 
@@ -197,7 +199,7 @@ public:
     : dims_(other.dims_)
     , offsets_(other.offsets_)
     , vec_(other.vec_) {
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
   }
 
 
@@ -205,7 +207,7 @@ public:
     : dims_(std::move(other.dims_))
     , offsets_(std::move(other.offsets_))
     , vec_(std::move(other.vec_)) {
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
   }
 
 
@@ -213,7 +215,7 @@ public:
     dims_ = other.dims_;
     offsets_ = other.offsets_;
     vec_ = other.vec_;
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     return *this;
   }
 
@@ -222,7 +224,7 @@ public:
     dims_ = std::move(other.dims_);
     offsets_ = std::move(other.offsets_);
     vec_ = std::move(other.vec_);
-    static_cast<base&>(*this) = base(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     return *this;
   }
 
@@ -263,8 +265,8 @@ private:
 
   void resize_(const T& val) {
     initOffsets_();
-    vec_.resize(base::size(), val);
-    base::first_ = vec_.begin(); // reset iterator after possible reallocation
+    vec_.resize(view::size(), val);
+    view::first_ = vec_.begin(); // reset iterator after possible reallocation
   }
 
 
@@ -277,14 +279,14 @@ private:
 
   void assign_(const T& val) {
     initOffsets_();
-    vec_.assign(base::size(), val);
-    base::first_ = vec_.begin(); // reset iterator after possible reallocation
+    vec_.assign(view::size(), val);
+    view::first_ = vec_.begin(); // reset iterator after possible reallocation
   }
 
 
   void initOffsets_() {
     size_type prod = 1;
-    for (size_type i = N - 1; i > 0; --i) {
+    for(size_type i = N - 1; i > 0; --i) {
       offsets_[i] = prod;
       prod *= dims_[i];
     }
