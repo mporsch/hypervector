@@ -26,13 +26,18 @@ public:
   using const_reference = typename container::const_reference;
   using reference = typename container::reference;
   using const_iterator = typename container::const_iterator;
-  using iterator = typename std::conditional<IsConst, const_iterator, typename container::iterator>::type;
+  using iterator = typename std::conditional<IsConst,
+      const_iterator,
+      typename container::iterator>::type;
 
 public:
   hypervector_view() = default;
 
 
-  hypervector_view(const size_type* dims, const size_type* offsets, iterator first)
+  hypervector_view(
+      const size_type* dims,
+      const size_type* offsets,
+      iterator first)
     : dims_(dims)
     , offsets_(offsets)
     , first_(first) {
@@ -135,10 +140,13 @@ public:
 protected:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N - 1, size_type>::type
-  indexOf_(size_type dim, Args&&... args) const {
+  indexOf_(
+      size_type dim,
+      Args&&... args) const {
     if(dim >= dims_[N - sizeof...(Args) - 1])
       throw std::out_of_range("hypervector_view::at");
-    return dim * offsets_[N - sizeof...(Args) - 1] + indexOf_(std::forward<Args>(args)...);
+    return dim * offsets_[N - sizeof...(Args) - 1] +
+      indexOf_(std::forward<Args>(args)...);
   }
 
   size_type indexOf_(size_type dim) const {
@@ -172,20 +180,24 @@ public:
 
 
   // hypervector(size_type count, const T& value)
-  /// create container with given dimensions; values are initialized to given value
+  /// create container with given dimensions;
+  /// values are initialized to given value
   template<typename ...Args>
-  hypervector(typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
-              Args&&... args) {
+  hypervector(
+      typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
+      Args&&... args) {
     static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)...);
   }
 
 
   // hypervector(size_type count)
-  /// create container with given dimensions; values are default initialized
+  /// create container with given dimensions;
+  /// values are default initialized
   template<typename ...Args>
-  hypervector(typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
-              Args&&... args) {
+  hypervector(
+      typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
+      Args&&... args) {
     static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
     assign_(dim1, std::forward<Args>(args)..., T());
   }
@@ -230,35 +242,46 @@ public:
 
 
   // void resize(size_type count, const T& value)
-  /// resize container to given dimensions; newly created elements will be initialized to given value
+  /// resize container to given dimensions;
+  /// newly created elements will be initialized to given value
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
-  resize(size_type dim1, Args&&... args) {
+  resize(
+      size_type dim1,
+      Args&&... args) {
     resize_(dim1, std::forward<Args>(args)...);
   }
 
 
   // void resize(size_type count)
-  /// resize container to given dimensions; newly created elements will be default initialized
+  /// resize container to given dimensions;
+  /// newly created elements will be default initialized
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N - 1, void>::type
-  resize(size_type dim1, Args&&... args) {
+  resize(
+      size_type dim1,
+      Args&&... args) {
     resize_(dim1, std::forward<Args>(args)..., T());
   }
 
 
   // void assign(size_type count, const T& value)
-  /// assign given dimensions to container and set all elements to given value
+  /// assign given dimensions to container and
+  /// set all elements to given value
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
-  assign(size_type dim1, Args&&... args) {
+  assign(
+      size_type dim1,
+      Args&&... args) {
     assign_(dim1, std::forward<Args>(args)...);
   }
 
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  resize_(size_type dim1, Args&&... args) {
+  resize_(
+      size_type dim1,
+      Args&&... args) {
     dims_[N - sizeof...(Args)] = dim1;
     resize_(std::forward<Args>(args)...);
   }
@@ -272,7 +295,9 @@ private:
 
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, void>::type
-  assign_(size_type dim1, Args&&... args) {
+  assign_(
+      size_type dim1,
+      Args&&... args) {
     dims_[N - sizeof...(Args)] = dim1;
     assign_(std::forward<Args>(args)...);
   }
@@ -301,7 +326,9 @@ private:
 
 
 template<typename T, size_t N, bool IsConst>
-std::ostream &operator<<(std::ostream &os, const hypervector_view<T, N, IsConst>& hvec) {
+std::ostream& operator<<(
+    std::ostream& os,
+    const hypervector_view<T, N, IsConst>& hvec) {
   auto size = hvec.size(0);
   for(decltype(size) i = 0; i < size; ++i)
     os << "(" << hvec[i] << ")" << (i != size - 1 ? ", " : "");
@@ -309,7 +336,9 @@ std::ostream &operator<<(std::ostream &os, const hypervector_view<T, N, IsConst>
 }
 
 template<typename T, bool IsConst>
-std::ostream &operator<<(std::ostream &os, const hypervector_view<T, 1, IsConst>& hvec) {
+std::ostream& operator<<(
+    std::ostream& os,
+    const hypervector_view<T, 1, IsConst>& hvec) {
   auto size = hvec.size(0);
   for(decltype(size) i = 0; i < size; ++i)
     os << hvec[i] << (i != size - 1 ? ", " : "");
