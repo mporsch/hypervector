@@ -330,8 +330,11 @@ std::ostream& operator<<(
     std::ostream& os,
     const hypervector_view<T, N, IsConst>& hvec) {
   auto size = hvec.size(0);
-  for(decltype(size) i = 0; i < size; ++i)
-    os << "(" << hvec[i] << ")" << (i != size - 1 ? ", " : "");
+  const char* separator = "";
+  for(decltype(size) i = 0; i < size; ++i) {
+    os << separator << "(" << hvec[i] << ")";
+    separator = ", ";
+  }
   return os;
 }
 
@@ -340,8 +343,11 @@ std::ostream& operator<<(
     std::ostream& os,
     const hypervector_view<T, 1, IsConst>& hvec) {
   auto size = hvec.size(0);
-  for(decltype(size) i = 0; i < size; ++i)
-    os << hvec[i] << (i != size - 1 ? ", " : "");
+  const char* separator = "";
+  for(decltype(size) i = 0; i < size; ++i) {
+    os << separator << hvec[i];
+    separator = ", ";
+  }
   return os;
 }
 
