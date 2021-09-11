@@ -41,6 +41,18 @@ int main(int /*argc*/, char** /*argv*/) {
     hvec.resize(3, 3, 3);
     success &= (hvec.size() == 3 * 3 * 3);
     std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
+
+    hvec.resize(3, 3, 0);
+    success &= (hvec.size() == 3 * 3 * 0);
+    std::cout << "resize(3, 3, 0):\n" << hvec << "\n\n";
+
+    hvec.resize(3, 0, 3);
+    success &= (hvec.size() == 3 * 0 * 3);
+    std::cout << "resize(3, 0, 3):\n" << hvec << "\n\n";
+
+    hvec.assign(0, 3, 3, "oh");
+    success &= (hvec.size() == 0 * 3 * 3);
+    std::cout << "assign(0, 3, 3, \"oh\"):\n" << hvec << "\n\n";
   }
 
   {
