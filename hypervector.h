@@ -184,10 +184,10 @@ public:
   /// values are initialized to given value
   template<typename ...Args>
   hypervector(
-      typename std::enable_if<sizeof...(Args) == N, size_type>::type dim1,
+      typename std::enable_if<sizeof...(Args) == N, size_type>::type dim0,
       Args&&... args) {
     static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(dim1, std::forward<Args>(args)...);
+    (void)assign_(1, dim0, std::forward<Args>(args)...);
   }
 
 
@@ -196,10 +196,10 @@ public:
   /// values are default initialized
   template<typename ...Args>
   hypervector(
-      typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim1,
+      typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim0,
       Args&&... args) {
     static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(dim1, std::forward<Args>(args)..., T());
+    (void)assign_(1, dim0, std::forward<Args>(args)..., T());
   }
 
 
@@ -247,9 +247,9 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
   resize(
-      size_type dim1,
+      size_type dim0,
       Args&&... args) {
-    (void)resize_(dim1, std::forward<Args>(args)...);
+    (void)resize_(1, dim0, std::forward<Args>(args)...);
   }
 
 
@@ -259,9 +259,9 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N - 1, void>::type
   resize(
-      size_type dim1,
+      size_type dim0,
       Args&&... args) {
-    (void)resize_(dim1, std::forward<Args>(args)..., T());
+    (void)resize_(1, dim0, std::forward<Args>(args)..., T());
   }
 
 
@@ -271,25 +271,28 @@ public:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) == N, void>::type
   assign(
-      size_type dim1,
+      size_type dim0,
       Args&&... args) {
-    (void)assign_(dim1, std::forward<Args>(args)...);
+    (void)assign_(1, dim0, std::forward<Args>(args)...);
   }
 
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, size_type>::type
   resize_(
-      size_type dim1,
+      size_type size,
+      size_type dim,
       Args&&... args) {
     constexpr auto idx = N - sizeof...(Args);
-    dims_[idx] = dim1;
-    offsets_[idx] = resize_(std::forward<Args>(args)...);
-    return offsets_[idx] * dim1;
+    dims_[idx] = dim;
+    offsets_[idx] = resize_(size * dim, std::forward<Args>(args)...);
+    return offsets_[idx] * dim;
   }
 
-  size_type resize_(const T& val) {
-    vec_.resize(view::size(), val);
+  size_type resize_(
+      size_type size,
+      const T& val) {
+    vec_.resize(size, val);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
     return 1;
   }
@@ -298,16 +301,19 @@ private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, size_type>::type
   assign_(
-      size_type dim1,
+      size_type size,
+      size_type dim,
       Args&&... args) {
     constexpr auto idx = N - sizeof...(Args);
-    dims_[idx] = dim1;
-    offsets_[idx] = assign_(std::forward<Args>(args)...);
-    return offsets_[idx] * dim1;
+    dims_[idx] = dim;
+    offsets_[idx] = assign_(size * dim, std::forward<Args>(args)...);
+    return offsets_[idx] * dim;
   }
 
-  size_type assign_(const T& val) {
-    vec_.assign(view::size(), val);
+  size_type assign_(
+      size_type size,
+      const T& val) {
+    vec_.assign(size, val);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
     return 1;
   }
