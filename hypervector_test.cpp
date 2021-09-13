@@ -9,12 +9,14 @@ int main(int /*argc*/, char** /*argv*/) {
   { // test the different constructors, assign() and resize()
     {
       hypervector<std::string, 3> hvec;
+      hvec.reserve(3, 3, 3);
       success &= (hvec.size() == 0);
       std::cout << "construct():\n" << hvec << "\n\n";
     }
 
     {
       hypervector<std::string, 3> hvec(1, 2, 3);
+      hvec.reserve(3 * 3 * 3);
       success &= (hvec.size(0) == 1);
       success &= (hvec.size(1) == 2);
       success &= (hvec.size(2) == 3);
@@ -22,7 +24,10 @@ int main(int /*argc*/, char** /*argv*/) {
       std::cout << "construct(1, 2, 3):\n" << hvec << "\n\n";
     }
 
-    hypervector<std::string, 3> hvec(1, 2, 3, "ho");
+    hypervector<std::string, 3> hvec;
+    hvec.reserve(3, 3, 3);
+
+    hvec.assign(1, 2, 3, "ho");
     success &= (hvec.size() == 1 * 2 * 3);
     std::cout << "construct(1, 2, 3, \"ho\"):\n" << hvec << "\n\n";
 

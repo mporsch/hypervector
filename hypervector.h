@@ -276,6 +276,24 @@ public:
     (void)assign_(1, dim0, std::forward<Args>(args)...);
   }
 
+
+  // void reserve(size_type count)
+  /// reserve container to given maximum dimension sizes to pre-allocate storage
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) == N - 1, void>::type
+  reserve(
+      size_type dim0,
+      Args&&... args) {
+    reserve_(1, dim0, std::forward<Args>(args)...);
+  }
+
+
+  // void reserve(size_type count)
+  /// reserve container to given maximum overall size to pre-allocate storage
+  void reserve(size_type size) {
+    reserve_(size);
+  }
+
 private:
   template<typename ...Args>
   typename std::enable_if<sizeof...(Args) <= N, size_type>::type
@@ -316,6 +334,21 @@ private:
     vec_.assign(size, val);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
     return 1;
+  }
+
+
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) < N, void>::type
+  reserve_(
+      size_type size,
+      size_type dim,
+      Args&&... args) {
+    reserve_(size * dim, std::forward<Args>(args)...);
+  }
+
+  void reserve_(size_type size) {
+    vec_.reserve(size);
+    view::first_ = vec_.begin(); // reset iterator after possible reallocation
   }
 
 private:
