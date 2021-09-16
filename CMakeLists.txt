@@ -4,7 +4,7 @@ project(hypervector CXX)
 set(CMAKE_CXX_STANDARD 11)
 
 # header-only library
-add_library(hypervector INTERFACE hypervector.h)
+add_library(hypervector INTERFACE)
 target_include_directories(hypervector INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 export(TARGETS hypervector FILE hypervector-config.cmake)
 
