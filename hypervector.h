@@ -4,9 +4,11 @@
 #include <array>
 #include <cstddef>
 #include <iostream>
+#include <functional>
 #include <numeric>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 template<typename T>
@@ -36,10 +38,8 @@ public:
 
   hypervector_view(
       const size_type* dims,
-      const size_type* offsets,
       iterator first)
     : dims_(dims)
-    , offsets_(offsets)
     , first_(first) {
   }
 
@@ -65,10 +65,10 @@ public:
            typename = typename std::enable_if<(N_ > 1)>::type>
   hypervector_view<T, N - 1, IsConst>
   operator[](size_type pos) {
+    auto offset = std::accumulate(dims_ + 1, dims_ + N, 1, std::multiplies<size_type>{});
     return hypervector_view<T, N - 1, IsConst>(
       dims_ + 1,
-      offsets_ + 1,
-      first_ + pos * offsets_[0]);
+      first_ + pos * offset);
   }
 
   template<size_t N_ = N,
@@ -83,10 +83,10 @@ public:
            typename = typename std::enable_if<(N_ > 1)>::type>
   hypervector_view<T, N - 1, true>
   operator[](size_type pos) const {
+    auto offset = std::accumulate(dims_ + 1, dims_ + N, 1, std::multiplies<size_type>{});
     return hypervector_view<T, N - 1, true>(
       dims_ + 1,
-      offsets_ + 1,
-      first_ + pos * offsets_[0]);
+      first_ + pos * offset);
   }
 
   template<size_t N_ = N,
@@ -134,28 +134,34 @@ public:
   // implicit conversion from non-const to const
   operator hypervector_view<T, N, true>() const
   {
-    return hypervector_view<T, N, true>(dims_, offsets_, first_);
+    return hypervector_view<T, N, true>(dims_, first_);
   }
 
 protected:
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N - 1, size_type>::type
-  indexOf_(
-      size_type dim,
-      Args&&... args) const {
-    constexpr auto idx = N - sizeof...(Args) - 1;
-    if(dim >= dims_[idx])
-      throw std::out_of_range("hypervector_view::at");
-    return dim * offsets_[idx] + indexOf_(std::forward<Args>(args)...);
+  typename std::enable_if<sizeof...(Args) == N, size_type>::type
+  indexOf_(Args&&... args) const {
+    return indexAndOffsetOf_(std::forward<Args>(args)...).first;
   }
 
-  size_type indexOf_(size_type dim) const {
-    return dim;
+  template<typename ...Args>
+  typename std::enable_if<sizeof...(Args) <= N - 1, std::pair<size_type, size_type>>::type
+  indexAndOffsetOf_(
+      size_type dim,
+      Args&&... args) const {
+    if(dim >= dims_[N - sizeof...(Args) - 1])
+      throw std::out_of_range("hypervector_view::at");
+    auto p = indexAndOffsetOf_(std::forward<Args>(args)...);
+    auto offset = p.second * dims_[N - sizeof...(Args)];
+    return std::make_pair(dim * offset + p.first, offset);
+  }
+
+  std::pair<size_type, size_type> indexAndOffsetOf_(size_type dim) const {
+    return std::make_pair(dim, 1);
   }
 
 protected:
   const size_type* dims_;
-  const size_type* offsets_;
   iterator first_;
 };
 
@@ -173,9 +179,8 @@ public:
   // hypervector()
   /// create uninitialized container
   hypervector()
-    : dims_{0}
-    , offsets_{0} {
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
+    : dims_{0} {
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
   }
 
 
@@ -186,8 +191,8 @@ public:
   hypervector(
       typename std::enable_if<sizeof...(Args) == N, size_type>::type dim0,
       Args&&... args) {
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(1, dim0, std::forward<Args>(args)...);
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
+    assign_(1, dim0, std::forward<Args>(args)...);
   }
 
 
@@ -198,8 +203,8 @@ public:
   hypervector(
       typename std::enable_if<sizeof...(Args) == N - 1, size_type>::type dim0,
       Args&&... args) {
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(1, dim0, std::forward<Args>(args)..., T());
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
+    assign_(1, dim0, std::forward<Args>(args)..., T());
   }
 
 
@@ -209,34 +214,30 @@ public:
 
   hypervector(const hypervector& other)
     : dims_(other.dims_)
-    , offsets_(other.offsets_)
     , vec_(other.vec_) {
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
   }
 
 
   hypervector(hypervector&& other)
     : dims_(std::move(other.dims_))
-    , offsets_(std::move(other.offsets_))
     , vec_(std::move(other.vec_)) {
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
   }
 
 
   hypervector& operator=(const hypervector& other) {
     dims_ = other.dims_;
-    offsets_ = other.offsets_;
     vec_ = other.vec_;
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
     return *this;
   }
 
 
   hypervector& operator=(hypervector&& other) {
     dims_ = std::move(other.dims_);
-    offsets_ = std::move(other.offsets_);
     vec_ = std::move(other.vec_);
-    static_cast<view&>(*this) = view(dims_.data(), offsets_.data(), vec_.begin());
+    static_cast<view&>(*this) = view(dims_.data(), vec_.begin());
     return *this;
   }
 
@@ -249,7 +250,7 @@ public:
   resize(
       size_type dim0,
       Args&&... args) {
-    (void)resize_(1, dim0, std::forward<Args>(args)...);
+    resize_(1, dim0, std::forward<Args>(args)...);
   }
 
 
@@ -261,7 +262,7 @@ public:
   resize(
       size_type dim0,
       Args&&... args) {
-    (void)resize_(1, dim0, std::forward<Args>(args)..., T());
+    resize_(1, dim0, std::forward<Args>(args)..., T());
   }
 
 
@@ -273,7 +274,7 @@ public:
   assign(
       size_type dim0,
       Args&&... args) {
-    (void)assign_(1, dim0, std::forward<Args>(args)...);
+    assign_(1, dim0, std::forward<Args>(args)...);
   }
 
 
@@ -296,44 +297,40 @@ public:
 
 private:
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N, size_type>::type
+  typename std::enable_if<sizeof...(Args) <= N, void>::type
   resize_(
       size_type size,
       size_type dim,
       Args&&... args) {
     constexpr auto idx = N - sizeof...(Args);
     dims_[idx] = dim;
-    offsets_[idx] = resize_(size * dim, std::forward<Args>(args)...);
-    return offsets_[idx] * dim;
+    resize_(size * dim, std::forward<Args>(args)...);
   }
 
-  size_type resize_(
+  void resize_(
       size_type size,
       const T& val) {
     vec_.resize(size, val);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
-    return 1;
   }
 
 
   template<typename ...Args>
-  typename std::enable_if<sizeof...(Args) <= N, size_type>::type
+  typename std::enable_if<sizeof...(Args) <= N, void>::type
   assign_(
       size_type size,
       size_type dim,
       Args&&... args) {
     constexpr auto idx = N - sizeof...(Args);
     dims_[idx] = dim;
-    offsets_[idx] = assign_(size * dim, std::forward<Args>(args)...);
-    return offsets_[idx] * dim;
+    assign_(size * dim, std::forward<Args>(args)...);
   }
 
-  size_type assign_(
+  void assign_(
       size_type size,
       const T& val) {
     vec_.assign(size, val);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
-    return 1;
   }
 
 
@@ -353,7 +350,6 @@ private:
 
 private:
   std::array<size_type, N> dims_;
-  std::array<size_type, N> offsets_;
   container vec_;
 };
 
