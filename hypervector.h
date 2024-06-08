@@ -27,8 +27,15 @@ public:
   using reference = typename container::reference;
   using const_iterator = typename container::const_iterator;
   using iterator = typename std::conditional<IsConst,
-      const_iterator,
-      typename container::iterator>::type;
+    const_iterator,
+    typename container::iterator>::type;
+
+  using const_slice = typename std::conditional<(N > 1),
+    hypervector_view<T, N - 1, true>,
+    void>::type;
+  using slice = typename std::conditional<(N > 1),
+    hypervector_view<T, N - 1, IsConst>,
+    void>::type;
 
 public:
   hypervector_view() = default;
@@ -63,9 +70,8 @@ public:
   // subdimension operator[](size_type pos)
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ > 1)>::type>
-  hypervector_view<T, N - 1, IsConst>
-  operator[](size_type pos) {
-    return hypervector_view<T, N - 1, IsConst>(
+  slice operator[](size_type pos) {
+    return slice(
       dims_ + 1,
       offsets_ + 1,
       first_ + pos * offsets_[0]);
@@ -81,9 +87,8 @@ public:
   // subdimension operator[](size_type pos) const
   template<size_t N_ = N,
            typename = typename std::enable_if<(N_ > 1)>::type>
-  hypervector_view<T, N - 1, true>
-  operator[](size_type pos) const {
-    return hypervector_view<T, N - 1, true>(
+  const_slice operator[](size_type pos) const {
+    return const_slice(
       dims_ + 1,
       offsets_ + 1,
       first_ + pos * offsets_[0]);
