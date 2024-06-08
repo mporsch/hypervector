@@ -17,9 +17,9 @@ int main(int /*argc*/, char** /*argv*/) {
     {
       hypervector<std::string, 3> hvec(1, 2, 3);
       hvec.reserve(3 * 3 * 3);
-      success &= (hvec.size(0) == 1);
-      success &= (hvec.size(1) == 2);
-      success &= (hvec.size(2) == 3);
+      success &= (hvec.sizeOf<0>() == 1);
+      success &= (hvec.sizeOf<1>() == 2);
+      success &= (hvec.sizeOf<2>() == 3);
       success &= (hvec.size() == 1 * 2 * 3);
       std::cout << "construct(1, 2, 3):\n" << hvec << "\n\n";
     }
@@ -102,17 +102,17 @@ int main(int /*argc*/, char** /*argv*/) {
   { // fool around with operator[] and at()
     hypervector<std::string, 4> hvec(5, 4, 3, 2, "0");
     int i = 0;
-    for (size_t w = 0; w < hvec.size(0); ++w)
-      for (size_t x = 0; x < hvec.size(1); ++x)
-        for (size_t y = 0; y < hvec.size(2); ++y)
-          for (size_t z = 0; z < hvec.size(3); ++z)
+    for (size_t w = 0; w < hvec.sizeOf<0>(); ++w)
+      for (size_t x = 0; x < hvec.sizeOf<1>(); ++x)
+        for (size_t y = 0; y < hvec.sizeOf<2>(); ++y)
+          for (size_t z = 0; z < hvec.sizeOf<3>(); ++z)
             hvec.at(w, x, y, z) = std::to_string(i++);
     std::cout << "at(w, x, y, z):\n" << hvec << "\n\n";
 
-    for (size_t w = 0; w < hvec.size(0); ++w)
-        for (size_t x = 0; x < hvec.size(1); ++x)
-          for (size_t y = 0; y < hvec.size(2); ++y)
-            for (size_t z = 0; z < hvec.size(3); ++z)
+    for (size_t w = 0; w < hvec.sizeOf<0>(); ++w)
+        for (size_t x = 0; x < hvec.sizeOf<1>(); ++x)
+          for (size_t y = 0; y < hvec.sizeOf<2>(); ++y)
+            for (size_t z = 0; z < hvec.sizeOf<3>(); ++z)
               hvec[w][x][y][z] = std::to_string(--i);
     std::cout << "operator[w][x][y][z]:\n"  << hvec << "\n\n";
   }

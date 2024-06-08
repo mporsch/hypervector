@@ -109,10 +109,17 @@ public:
   }
 
 
-  size_type size(size_type dim) const {
-    if(dim >= N)
-      throw std::out_of_range("hypervector_view::size");
-    return dims_[dim];
+  template<size_type Dim>
+  size_type sizeOf() const {
+    static_assert(Dim <= N, "hypervector_view::sizeOf");
+    return dims_[Dim];
+  }
+
+
+  template<size_type Dim>
+  size_type offsetOf() const {
+    static_assert(Dim <= N, "hypervector_view::offsetOf");
+    return offsets_[Dim];
   }
 
 
@@ -367,7 +374,7 @@ template<typename T, size_t N, bool IsConst>
 std::ostream& operator<<(
     std::ostream& os,
     const hypervector_view<T, N, IsConst>& hvec) {
-  auto size = hvec.size(0);
+  auto size = hvec.template sizeOf<0>();
   const char* separator = "";
   for(decltype(size) i = 0; i < size; ++i) {
     os << separator << "(" << hvec[i] << ")";
@@ -380,7 +387,7 @@ template<typename T, bool IsConst>
 std::ostream& operator<<(
     std::ostream& os,
     const hypervector_view<T, 1, IsConst>& hvec) {
-  auto size = hvec.size(0);
+  auto size = hvec.template sizeOf<0>();
   const char* separator = "";
   for(decltype(size) i = 0; i < size; ++i) {
     os << separator << hvec[i];
