@@ -2,6 +2,7 @@
 #define HYPERVECTOR_H
 
 #include <array>
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
 #include <numeric>
@@ -148,6 +149,20 @@ public:
     return hypervector_view<T, Dims, true>(sizes_, offsets_, first_);
   }
 
+
+  // comparison of different types but equal dimensions
+  template<typename U, bool IsConstO>
+  bool operator==(
+      const hypervector_view<U, Dims, IsConstO>& other) const {
+    return true
+    && std::equal(
+      sizes_, sizes_ + Dims,
+      other.sizes_)
+    && std::equal(
+      begin(), end(),
+      other.begin());
+  }
+
 protected:
   template<typename ...Indices>
   typename std::enable_if<sizeof...(Indices) <= Dims - 1, size_type>::type
@@ -181,7 +196,6 @@ public:
   using container = typename hypervector_detail<T>::container;
 
 public:
-  // hypervector()
   /// create uninitialized container
   hypervector()
     : sizes_{0}
