@@ -15,13 +15,6 @@ struct hypervector_detail
 {
   using container = typename std::vector<T>;
   using size_type = typename container::size_type;
-
-  template<size_t Size>
-  static std::array<size_type, Size> make_array(const size_type& val) {
-    std::array<size_type, Size> arr;
-    arr.fill(val);
-    return arr;
-  }
 };
 
 /// view on hypervector storage providing element read and write accessors
@@ -118,14 +111,14 @@ public:
 
   template<size_type Dim>
   size_type sizeOf() const {
-    static_assert(Dim <= Dims, "hypervector_view::sizeOf");
+    static_assert(Dim < Dims, "hypervector_view::sizeOf");
     return sizes_[Dim];
   }
 
 
   template<size_type Dim>
   size_type offsetOf() const {
-    static_assert(Dim <= Dims, "hypervector_view::offsetOf");
+    static_assert(Dim < Dims, "hypervector_view::offsetOf");
     return offsets_[Dim];
   }
 
@@ -254,16 +247,25 @@ public:
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
+  // hypervector(std::initializer_list<std::initializer_list<...>>)
+  /// creates container with given values and dimensions
+  template<typename U>
+  hypervector(std::initializer_list<U> init)
+    : sizes_{0}
+    , offsets_{0} {
+    vec_.reserve(list_size(init));
+    list_init<0>(std::move(init));
 
-  /// creates container with given values
-  /// @note  Mind that this only sets the container values,
-  ///        but not the sizes of the dimensions;
-  ///        Use resize() afterwards to set these.
-  hypervector(std::initializer_list<T> init)
-    : sizes_(hypervector_detail<T>::template make_array<Dims>(1))
-    , offsets_(hypervector_detail<T>::template make_array<Dims>(init.size()))
-    , vec_(std::move(init)) {
-    std::swap(sizes_[Dims - 1], offsets_[Dims - 1]);
+    size_type prod = 1;
+    std::transform(
+      begin(sizes_), end(sizes_),
+      rbegin(offsets_),
+      [&prod](size_type size) -> size_type {
+        auto tmp = prod;
+        prod *= size;
+        return tmp;
+      });
+
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
@@ -394,6 +396,48 @@ private:
   void reserve_(size_type size) {
     vec_.reserve(size);
     view::first_ = vec_.begin(); // reset iterator after possible reallocation
+  }
+
+
+  template<size_t Dim, typename U>
+  void list_init(std::initializer_list<std::initializer_list<U>> init) {
+    static_assert(Dim < Dims, "hypervector(std::initializer_list)");
+
+    auto& size = sizes_[Dim];
+    if(size && size != init.size()) {
+      throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
+    }
+    size = init.size();
+
+    for(auto&& l : init) {
+      list_init<Dim + 1>(std::move(l));
+    }
+  }
+
+  template<size_t Dim>
+  void list_init(std::initializer_list<T> init) {
+    static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
+
+    auto& size = sizes_[Dim];
+    if(size && size != init.size()) {
+      throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
+    }
+    size = init.size();
+
+    vec_.insert(end(vec_), std::move(init));
+  }
+
+
+  template<typename U>
+  static size_type list_size(const std::initializer_list<std::initializer_list<U>>& init) {
+    return std::accumulate(begin(init), end(init), 0,
+      [](size_type sum, const std::initializer_list<U>& init) -> size_type {
+        return sum + list_size(init);
+      });
+  }
+
+  static size_type list_size(const std::initializer_list<T>& init) {
+    return init.size();
   }
 
 private:
