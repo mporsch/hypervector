@@ -15,6 +15,13 @@ struct hypervector_detail
 {
   using container = typename std::vector<T>;
   using size_type = typename container::size_type;
+
+  template<size_t Size>
+  static std::array<size_type, Size> make_array(const size_type& val) {
+    std::array<size_type, Size> arr;
+    arr.fill(val);
+    return arr;
+  }
 };
 
 /// view on hypervector storage providing element read and write accessors
@@ -244,6 +251,19 @@ public:
     : sizes_(std::move(other.sizes_))
     , offsets_(std::move(other.offsets_))
     , vec_(std::move(other.vec_)) {
+    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+  }
+
+
+  /// creates container with given values
+  /// @note  Mind that this only sets the container values,
+  ///        but not the sizes of the dimensions;
+  ///        Use resize() afterwards to set these.
+  hypervector(std::initializer_list<T> init)
+    : sizes_(hypervector_detail<T>::template make_array<Dims>(1))
+    , offsets_(hypervector_detail<T>::template make_array<Dims>(init.size()))
+    , vec_(std::move(init)) {
+    std::swap(sizes_[Dims - 1], offsets_[Dims - 1]);
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
