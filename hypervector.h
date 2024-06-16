@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <iostream>
-#include <numeric>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -102,10 +101,7 @@ public:
 
 
   size_type size() const {
-    return std::accumulate(sizes_, sizes_ + Dims, 1,
-      [](size_type prod, size_type size) -> size_type {
-        return prod * size;
-      });
+    return offsets_[0] * sizes_[0];
   }
 
 
