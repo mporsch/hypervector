@@ -253,19 +253,8 @@ public:
   hypervector(std::initializer_list<U> init)
     : sizes_{0}
     , offsets_{0} {
-    vec_.reserve(list_size(init));
-    list_init<0>(std::move(init));
-
-    size_type prod = 1;
-    std::transform(
-      begin(sizes_), end(sizes_),
-      rbegin(offsets_),
-      [&prod](size_type size) -> size_type {
-        auto tmp = prod;
-        prod *= size;
-        return tmp;
-      });
-
+    vec_.reserve(list_init_size<0>(init));
+    list_init_values<0>(std::move(init));
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
@@ -400,44 +389,48 @@ private:
 
 
   template<size_t Dim, typename U>
-  void list_init(std::initializer_list<std::initializer_list<U>> init) {
+  size_type list_init_size(const std::initializer_list<std::initializer_list<U>>& curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
-    auto& size = sizes_[Dim];
-    if(size && size != init.size()) {
-      throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
-    }
-    size = init.size();
+    auto curr_size = curr.size();
+    sizes_[Dim] = curr_size;
 
-    for(auto&& l : init) {
-      list_init<Dim + 1>(std::move(l));
+    for(auto&& next : curr) {
+      auto prev_size = sizes_[Dim + 1];
+      if(prev_size && (prev_size != next.size())) {
+        throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
+      }
+
+      offsets_[Dim] = list_init_size<Dim + 1>(next);
+    }
+
+    return offsets_[Dim] * curr_size;
+  }
+
+  template<size_t Dim>
+  size_type list_init_size(const std::initializer_list<T>& init) {
+    static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
+
+    auto size = init.size();
+    sizes_[Dim] = size;
+    offsets_[Dim] = 1;
+    return size;
+  }
+
+
+  template<size_t Dim, typename U>
+  void list_init_values(std::initializer_list<std::initializer_list<U>> curr) {
+    static_assert(Dim < Dims, "hypervector(std::initializer_list)");
+
+    for(auto&& next : curr) {
+      list_init_values<Dim + 1>(std::move(next));
     }
   }
 
   template<size_t Dim>
-  void list_init(std::initializer_list<T> init) {
+  void list_init_values(std::initializer_list<T> init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
-
-    auto& size = sizes_[Dim];
-    if(size && size != init.size()) {
-      throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
-    }
-    size = init.size();
-
     vec_.insert(end(vec_), std::move(init));
-  }
-
-
-  template<typename U>
-  static size_type list_size(const std::initializer_list<std::initializer_list<U>>& init) {
-    return std::accumulate(begin(init), end(init), 0,
-      [](size_type sum, const std::initializer_list<U>& init) -> size_type {
-        return sum + list_size(init);
-      });
-  }
-
-  static size_type list_size(const std::initializer_list<T>& init) {
-    return init.size();
   }
 
 private:
