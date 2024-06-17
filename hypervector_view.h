@@ -151,6 +151,13 @@ public:
       other.begin());
   }
 
+
+  template<typename U, bool IsConstO>
+  bool operator!=(
+      const hypervector_view<U, Dims, IsConstO>& other) const {
+    return !(*this == other);
+  }
+
 protected:
   template<typename ...Indices>
   typename std::enable_if<sizeof...(Indices) <= Dims - 1, size_type>::type
