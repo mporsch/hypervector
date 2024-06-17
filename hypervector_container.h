@@ -138,18 +138,13 @@ public:
   // void reserve(size_type count)
   /// reserve container to given maximum dimension sizes to pre-allocate storage
   template<typename ...Sizes>
-  typename std::enable_if<sizeof...(Sizes) == Dims - 1, void>::type
+  typename std::enable_if<
+    sizeof...(Sizes) == Dims - 1 || sizeof...(Sizes) == 0,
+    void>::type
   reserve(
       size_type size0,
       Sizes&&... sizes) {
     reserve_(1, size0, std::forward<Sizes>(sizes)...);
-  }
-
-
-  // void reserve(size_type count)
-  /// reserve container to given maximum overall size to pre-allocate storage
-  void reserve(size_type size) {
-    reserve_(size);
   }
 
 private:
