@@ -18,7 +18,7 @@ public:
   using container = typename hypervector_detail<T>::container;
 
 public:
-  /// create uninitialized container
+  /// create empty container
   hypervector()
     : sizes_{0}
     , offsets_{0} {
@@ -26,7 +26,7 @@ public:
   }
 
 
-  // hypervector(size_type count, const T& value)
+  // hypervector(size_type count..., const T& value)
   /// create container with given dimensions;
   /// values are initialized to given value
   template<typename ...Sizes>
@@ -38,9 +38,9 @@ public:
   }
 
 
-  // hypervector(size_type count)
+  // hypervector(size_type count...)
   /// create container with given dimensions;
-  /// values are default initialized
+  /// values are default-initialized
   template<typename ...Sizes>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
@@ -69,14 +69,15 @@ public:
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
+
   // hypervector(std::initializer_list<std::initializer_list<...>>)
   /// creates container with given values and dimensions
   template<typename U>
   hypervector(std::initializer_list<U> init)
     : sizes_{0}
     , offsets_{0} {
-    vec_.reserve(list_init_size<0>(init));
-    list_init_values<0>(std::move(init));
+    vec_.reserve(list_init_size_<0>(init));
+    list_init_values_<0>(std::move(init));
     static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
   }
 
@@ -99,7 +100,7 @@ public:
   }
 
 
-  // void resize(size_type count, const T& value)
+  // void resize(size_type count..., const T& value)
   /// resize container to given dimensions;
   /// newly created elements will be initialized to given value
   template<typename ...Sizes>
@@ -111,9 +112,9 @@ public:
   }
 
 
-  // void resize(size_type count)
+  // void resize(size_type count...)
   /// resize container to given dimensions;
-  /// newly created elements will be default initialized
+  /// newly created elements will be default-initialized
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) == Dims - 1, void>::type
   resize(
@@ -123,7 +124,7 @@ public:
   }
 
 
-  // void assign(size_type count, const T& value)
+  // void assign(size_type count..., const T& value)
   /// assign given dimensions to container and
   /// set all elements to given value
   template<typename ...Sizes>
@@ -135,7 +136,7 @@ public:
   }
 
 
-  // void reserve(size_type count)
+  // void reserve(size_type count...)
   /// reserve container to given maximum dimension sizes to pre-allocate storage
   template<typename ...Sizes>
   typename std::enable_if<
@@ -206,7 +207,7 @@ private:
 
 
   template<size_t Dim, typename U>
-  size_type list_init_size(
+  size_type list_init_size_(
       const std::initializer_list<std::initializer_list<U>>& curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
@@ -219,14 +220,14 @@ private:
         throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
       }
 
-      offsets_[Dim] = list_init_size<Dim + 1>(next);
+      offsets_[Dim] = list_init_size_<Dim + 1>(next);
     }
 
     return offsets_[Dim] * curr_size;
   }
 
   template<size_t Dim>
-  size_type list_init_size(const std::initializer_list<T>& init) {
+  size_type list_init_size_(const std::initializer_list<T>& init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
 
     auto size = init.size();
@@ -237,17 +238,17 @@ private:
 
 
   template<size_t Dim, typename U>
-  void list_init_values(
+  void list_init_values_(
       std::initializer_list<std::initializer_list<U>> curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
     for(auto&& next : curr) {
-      list_init_values<Dim + 1>(std::move(next));
+      list_init_values_<Dim + 1>(std::move(next));
     }
   }
 
   template<size_t Dim>
-  void list_init_values(std::initializer_list<T> init) {
+  void list_init_values_(std::initializer_list<T> init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
     vec_.insert(end(vec_), std::move(init));
   }
