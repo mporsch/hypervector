@@ -3,7 +3,13 @@ cmake_minimum_required(VERSION 3.0.0)
 project(hypervector CXX)
 
 # header-only library
-add_library(hypervector INTERFACE hypervector.h)
+add_library(hypervector INTERFACE
+  hypervector.h
+  hypervector_container.h
+  hypervector_detail.h
+  hypervector_print.h
+  hypervector_view.h
+)
 target_compile_features(hypervector INTERFACE cxx_std_11)
 target_include_directories(hypervector INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 export(TARGETS hypervector FILE hypervector-config.cmake)
