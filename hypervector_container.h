@@ -250,7 +250,7 @@ private:
   template<size_t Dim>
   void list_init_values_(std::initializer_list<T> init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
-    vec_.insert(end(vec_), std::move(init));
+    vec_.insert(vec_.end(), std::move(init));
   }
 
 private:
