@@ -111,6 +111,13 @@ public:
   }
 
 
+  template<typename ...Indices>
+  typename std::enable_if<sizeof...(Indices) == Dims, size_type>::type
+  offsetOf(Indices&&... indices) const {
+    return offsetOf_(std::forward<Indices>(indices)...);
+  }
+
+
   iterator begin() {
     return first_;
   }
@@ -171,6 +178,20 @@ protected:
   }
 
   size_type indexOf_(size_type index) const {
+    return index;
+  }
+
+
+  template<typename ...Indices>
+  typename std::enable_if<sizeof...(Indices) <= Dims - 1, size_type>::type
+  offsetOf_(
+      size_type index0,
+      Indices&&... indices) const {
+    constexpr auto dim = Dims - sizeof...(Indices) - 1;
+    return index0 * offsets_[dim] + offsetOf_(std::forward<Indices>(indices)...);
+  }
+
+  size_type offsetOf_(size_type index) const {
     return index;
   }
 
