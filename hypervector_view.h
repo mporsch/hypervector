@@ -177,8 +177,8 @@ protected:
     return index0 * offsets_[dim] + indexOf_(std::forward<Indices>(indices)...);
   }
 
-  size_type indexOf_(size_type index) const {
-    return index;
+  size_type indexOf_() const {
+    return 0;
   }
 
 
