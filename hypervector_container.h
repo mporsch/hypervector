@@ -10,12 +10,16 @@
 
 /// hypervector container providing storage size modifiers
 template<typename T, size_t Dims>
-class hypervector : public hypervector_view<T, Dims, false>
+struct hypervector : public hypervector_view<T, Dims, false>
 {
-public:
   using view = hypervector_view<T, Dims, false>;
   using size_type = typename hypervector_detail<T>::size_type;
   using container = typename hypervector_detail<T>::container;
+
+private:
+  std::array<size_type, Dims> sizes_;
+  std::array<size_type, Dims> offsets_;
+  container vec_;
 
 public:
   /// create empty container
@@ -252,11 +256,6 @@ private:
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
     vec_.insert(vec_.end(), std::move(init));
   }
-
-private:
-  std::array<size_type, Dims> sizes_;
-  std::array<size_type, Dims> offsets_;
-  container vec_;
 };
 
 #endif // HYPERVECTOR_CONTAINER_H

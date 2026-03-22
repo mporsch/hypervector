@@ -10,9 +10,8 @@
 
 /// view on hypervector storage providing element read and write accessors
 template<typename T, size_t Dims, bool IsConst>
-class hypervector_view
+struct hypervector_view
 {
-public:
   using size_type = typename hypervector_detail<T>::size_type;
   using container = typename hypervector_detail<T>::container;
   using const_reference = typename container::const_reference;
@@ -27,6 +26,11 @@ public:
   using slice = typename std::conditional<(Dims > 1),
     hypervector_view<T, Dims - 1, IsConst>,
     void>::type;
+
+protected:
+  const size_type* sizes_;
+  const size_type* offsets_;
+  iterator first_;
 
 public:
   hypervector_view() = default;
@@ -194,11 +198,6 @@ protected:
   size_type offsetOf_(size_type index) const {
     return index;
   }
-
-protected:
-  const size_type* sizes_;
-  const size_type* offsets_;
-  iterator first_;
 };
 
 #endif // HYPERVECTOR_VIEW_H
