@@ -5,9 +5,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <initializer_list>
 #include <memory>
-#include <type_traits>
 #include <stdexcept>
+#include <type_traits>
 
 namespace hypervector_detail {
 } // namespace hypervector_detail
@@ -26,7 +27,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   /// create empty container
   hypervector()
     : hypervector(
-        std::make_unique<size_type[]>(Dims),
+        std::make_unique<size_type[]>(Dims), // zero-initialized
         std::make_unique<size_type[]>(Dims)
       ) {
   }
@@ -77,6 +78,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
       ) {
     std::copy_n(other.sizes_, Dims, view::sizes_);
     std::copy_n(other.offsets_, Dims, view::offsets_);
+    reserve_(0, other.size());
     std::uninitialized_copy_n(other.first_, other.size(), view::first_);
   }
 
@@ -99,7 +101,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   template<typename U>
   hypervector(std::initializer_list<U> init)
     : hypervector(
-        std::make_unique<size_type[]>(Dims),
+        std::make_unique<size_type[]>(Dims), // zero-initialized
         std::make_unique<size_type[]>(Dims)
       ) {
     reserve_(0, list_init_size_<0>(init));
@@ -108,17 +110,18 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector& operator=(const hypervector& other) {
-    reserve_(view::size(), other.size());
+    // no need to preserve anything: destroy, possibly grow, overwrite
+    std::destroy_n(view::first_, view::size());
+    reserve_(0, other.size());
     std::copy_n(other.sizes_, Dims, view::sizes_);
     std::copy_n(other.offsets_, Dims, view::offsets_);
-    std::copy_n(other.first_, other.size(), view::first_);
+    std::uninitialized_copy_n(other.first_, other.size(), view::first_);
     return *this;
   }
 
 
   hypervector& operator=(hypervector&& other) noexcept {
     std::destroy_at(this);
-
     view::sizes_ = other.sizes_;
     view::offsets_ = other.offsets_;
     view::first_ = other.first_;
@@ -138,7 +141,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   resize(
       size_type size0,
       Sizes&&... sizes) {
-    (void)resize_(1, size0, std::forward<Sizes>(sizes)...);
+    (void)resize_(view::size(), 1, size0, std::forward<Sizes>(sizes)...);
   }
 
 
@@ -150,7 +153,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   resize(
       size_type size0,
       Sizes&&... sizes) {
-    (void)resize_(1, size0, std::forward<Sizes>(sizes)..., T());
+    (void)resize_(view::size(), 1, size0, std::forward<Sizes>(sizes)..., T());
   }
 
 
@@ -194,12 +197,12 @@ private:
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   resize_(
       size_type old_size,
-      size_type new_size,
+      size_type acc_size,
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
     view::sizes_[dim] = size0;
-    view::offsets_[dim] = resize_(old_size, new_size * size0, std::forward<Sizes>(sizes)...);
+    view::offsets_[dim] = resize_(old_size, acc_size * size0, std::forward<Sizes>(sizes)...);
     return view::offsets_[dim] * size0;
   }
 
@@ -219,12 +222,12 @@ private:
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   assign_(
       size_type old_size,
-      size_type new_size,
+      size_type acc_size,
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
     view::sizes_[dim] = size0;
-    view::offsets_[dim] = assign_(old_size, new_size * size0, std::forward<Sizes>(sizes)...);
+    view::offsets_[dim] = assign_(old_size, acc_size * size0, std::forward<Sizes>(sizes)...);
     return view::offsets_[dim] * size0;
   }
 
