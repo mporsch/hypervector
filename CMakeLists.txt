@@ -18,7 +18,7 @@ set(HYPERVECTOR_PUBLIC_HEADER
   hypervector_view.h
 )
 add_library(hypervector INTERFACE ${HYPERVECTOR_PUBLIC_HEADER})
-target_compile_features(hypervector INTERFACE cxx_std_11)
+target_compile_features(hypervector INTERFACE cxx_std_20)
 target_include_directories(hypervector INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>

@@ -1,8 +1,6 @@
 #ifndef HYPERVECTOR_VIEW_H
 #define HYPERVECTOR_VIEW_H
 
-#include "hypervector_detail.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <stdexcept>
@@ -12,14 +10,16 @@
 template<typename T, size_t Dims, bool IsConst>
 struct hypervector_view
 {
-  using size_type = typename hypervector_detail<T>::size_type;
-  using container = typename hypervector_detail<T>::container;
-  using const_reference = typename container::const_reference;
-  using reference = typename container::reference;
-  using const_iterator = typename container::const_iterator;
-  using iterator = typename std::conditional<IsConst,
-    const_iterator,
-    typename container::iterator>::type;
+  using value_type = T;
+  using const_pointer = const T*;
+  using pointer = T*;
+  using const_reference = const T&;
+  using reference = T&;
+  using const_iterator = const_pointer;
+  using iterator = pointer;
+  using size_type = size_t;
+  using size_storage = typename std::conditional<IsConst, const size_type*, size_type*>::type;
+  using value_storage = typename std::conditional<IsConst, const_pointer, pointer>::type;
   using const_slice = typename std::conditional<(Dims > 1),
     hypervector_view<T, Dims - 1, true>,
     void>::type;
@@ -28,18 +28,18 @@ struct hypervector_view
     void>::type;
 
 protected:
-  const size_type* sizes_;
-  const size_type* offsets_;
-  iterator first_;
+  size_storage sizes_;
+  size_storage offsets_;
+  value_storage first_;
 
 public:
   hypervector_view() = default;
 
 
   hypervector_view(
-      const size_type* sizes,
-      const size_type* offsets,
-      iterator first)
+      size_storage sizes,
+      size_storage offsets,
+      value_storage first)
     : sizes_(sizes)
     , offsets_(offsets)
     , first_(first) {

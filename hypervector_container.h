@@ -1,32 +1,34 @@
 #ifndef HYPERVECTOR_CONTAINER_H
 #define HYPERVECTOR_CONTAINER_H
 
-#include "hypervector_detail.h"
 #include "hypervector_view.h"
 
-#include <array>
+#include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <type_traits>
+#include <stdexcept>
+
+namespace hypervector_detail {
+} // namespace hypervector_detail
 
 /// hypervector container providing storage size modifiers
 template<typename T, size_t Dims>
 struct hypervector : public hypervector_view<T, Dims, false>
 {
   using view = hypervector_view<T, Dims, false>;
-  using size_type = typename hypervector_detail<T>::size_type;
-  using container = typename hypervector_detail<T>::container;
 
-private:
-  std::array<size_type, Dims> sizes_;
-  std::array<size_type, Dims> offsets_;
-  container vec_;
+  using value_type = typename view::value_type;
+  using size_type = typename view::size_type;
 
-public:
+  size_type capacity_;
+
   /// create empty container
   hypervector()
-    : sizes_{0}
-    , offsets_{0} {
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+    : hypervector(
+        std::make_unique<size_type[]>(Dims),
+        std::make_unique<size_type[]>(Dims)
+      ) {
   }
 
 
@@ -36,9 +38,12 @@ public:
   template<typename ...Sizes>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims, size_type>::type size0,
-      Sizes&&... sizes) {
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(1, size0, std::forward<Sizes>(sizes)...);
+      Sizes&&... sizes)
+    : hypervector(
+        std::make_unique_for_overwrite<size_type[]>(Dims),
+        std::make_unique_for_overwrite<size_type[]>(Dims)
+      ) {
+    (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)...);
   }
 
 
@@ -48,29 +53,44 @@ public:
   template<typename ...Sizes>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
-      Sizes&&... sizes) {
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
-    (void)assign_(1, size0, std::forward<Sizes>(sizes)..., T());
+      Sizes&&... sizes)
+    : hypervector(
+        std::make_unique_for_overwrite<size_type[]>(Dims),
+        std::make_unique_for_overwrite<size_type[]>(Dims)
+      ) {
+    (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., value_type());
   }
 
 
-  ~hypervector() {
+  ~hypervector() noexcept {
+    std::destroy_n(view::begin(), view::size());
+    std::allocator<T>().deallocate(view::first_, capacity_);
+    delete[] view::offsets_;
+    delete[] view::sizes_;
   }
 
 
   hypervector(const hypervector& other)
-    : sizes_(other.sizes_)
-    , offsets_(other.offsets_)
-    , vec_(other.vec_) {
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+    : hypervector(
+        std::make_unique_for_overwrite<size_type[]>(Dims),
+        std::make_unique_for_overwrite<size_type[]>(Dims)
+      ) {
+    std::copy_n(other.sizes_, Dims, view::sizes_);
+    std::copy_n(other.offsets_, Dims, view::offsets_);
+    std::uninitialized_copy_n(other.first_, other.size(), view::first_);
   }
 
 
-  hypervector(hypervector&& other)
-    : sizes_(std::move(other.sizes_))
-    , offsets_(std::move(other.offsets_))
-    , vec_(std::move(other.vec_)) {
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+  hypervector(hypervector&& other) noexcept
+    : view(
+        other.sizes_,
+        other.offsets_,
+        other.first_
+      )
+    , capacity_(other.capacity_) {
+    other.sizes_ = nullptr;
+    other.offsets_ = nullptr;
+    other.first_ = nullptr;
   }
 
 
@@ -78,28 +98,34 @@ public:
   /// creates container with given values and dimensions
   template<typename U>
   hypervector(std::initializer_list<U> init)
-    : sizes_{0}
-    , offsets_{0} {
-    vec_.reserve(list_init_size_<0>(init));
-    list_init_values_<0>(std::move(init));
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+    : hypervector(
+        std::make_unique<size_type[]>(Dims),
+        std::make_unique<size_type[]>(Dims)
+      ) {
+    reserve_(0, list_init_size_<0>(init));
+    list_init_values_<0>(0, std::move(init));
   }
 
 
   hypervector& operator=(const hypervector& other) {
-    sizes_ = other.sizes_;
-    offsets_ = other.offsets_;
-    vec_ = other.vec_;
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+    reserve_(view::size(), other.size());
+    std::copy_n(other.sizes_, Dims, view::sizes_);
+    std::copy_n(other.offsets_, Dims, view::offsets_);
+    std::copy_n(other.first_, other.size(), view::first_);
     return *this;
   }
 
 
-  hypervector& operator=(hypervector&& other) {
-    sizes_ = std::move(other.sizes_);
-    offsets_ = std::move(other.offsets_);
-    vec_ = std::move(other.vec_);
-    static_cast<view&>(*this) = view(sizes_.data(), offsets_.data(), vec_.begin());
+  hypervector& operator=(hypervector&& other) noexcept {
+    std::destroy_at(this);
+
+    view::sizes_ = other.sizes_;
+    view::offsets_ = other.offsets_;
+    view::first_ = other.first_;
+    capacity_ = other.capacity_;
+    other.sizes_ = nullptr;
+    other.offsets_ = nullptr;
+    other.first_ = nullptr;
     return *this;
   }
 
@@ -136,7 +162,7 @@ public:
   assign(
       size_type size0,
       Sizes&&... sizes) {
-    (void)assign_(1, size0, std::forward<Sizes>(sizes)...);
+    (void)assign_(view::size(), 1, size0, std::forward<Sizes>(sizes)...);
   }
 
 
@@ -149,27 +175,42 @@ public:
   reserve(
       size_type size0,
       Sizes&&... sizes) {
-    reserve_(1, size0, std::forward<Sizes>(sizes)...);
+    reserve_(view::size(), size0, std::forward<Sizes>(sizes)...);
+  }
+
+  size_type capacity() const noexcept {
+    return capacity_;
   }
 
 private:
+  hypervector(
+      std::unique_ptr<size_type[]> sizes,
+      std::unique_ptr<size_type[]> offsets)
+    : view(sizes.release(), offsets.release(), nullptr)
+    , capacity_(0) {
+  }
+
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   resize_(
-      size_type size,
+      size_type old_size,
+      size_type new_size,
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
-    sizes_[dim] = size0;
-    offsets_[dim] = resize_(size * size0, std::forward<Sizes>(sizes)...);
-    return offsets_[dim] * size0;
+    view::sizes_[dim] = size0;
+    view::offsets_[dim] = resize_(old_size, new_size * size0, std::forward<Sizes>(sizes)...);
+    return view::offsets_[dim] * size0;
   }
 
   size_type resize_(
-      size_type size,
+      size_type old_size,
+      size_type new_size,
       const T& val) {
-    vec_.resize(size, val);
-    view::first_ = vec_.begin(); // reset iterator after possible reallocation
+    if (new_size > old_size) {
+      reserve_(old_size, new_size);
+      std::uninitialized_fill_n(view::first_, new_size - old_size, val);
+    }
     return 1;
   }
 
@@ -177,20 +218,24 @@ private:
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   assign_(
-      size_type size,
+      size_type old_size,
+      size_type new_size,
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
-    sizes_[dim] = size0;
-    offsets_[dim] = assign_(size * size0, std::forward<Sizes>(sizes)...);
-    return offsets_[dim] * size0;
+    view::sizes_[dim] = size0;
+    view::offsets_[dim] = assign_(old_size, new_size * size0, std::forward<Sizes>(sizes)...);
+    return view::offsets_[dim] * size0;
   }
 
   size_type assign_(
-      size_type size,
+      size_type old_size,
+      size_type new_size,
       const T& val) {
-    vec_.assign(size, val);
-    view::first_ = vec_.begin(); // reset iterator after possible reallocation
+    // no need to preserve anything: destroy, possibly grow, overwrite
+    std::destroy_n(view::first_, old_size);
+    reserve_(0, new_size);
+    std::uninitialized_fill_n(view::first_, new_size, val);
     return 1;
   }
 
@@ -198,15 +243,25 @@ private:
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) < Dims, void>::type
   reserve_(
+      size_type old_size,
       size_type size,
       size_type size0,
       Sizes&&... sizes) {
-    reserve_(size * size0, std::forward<Sizes>(sizes)...);
+    reserve_(old_size, size * size0, std::forward<Sizes>(sizes)...);
   }
 
-  void reserve_(size_type size) {
-    vec_.reserve(size);
-    view::first_ = vec_.begin(); // reset iterator after possible reallocation
+  void reserve_(
+      size_type old_size,
+      size_type size) {
+    if (size <= capacity_)
+      return;
+
+    auto ptr = std::allocator<T>().allocate(size);
+    std::uninitialized_move_n(view::first_, old_size, ptr);
+    std::destroy_n(view::first_, old_size);
+    std::allocator<T>().deallocate(view::first_, capacity_);
+    view::first_ = ptr;
+    capacity_ = size;
   }
 
 
@@ -216,18 +271,18 @@ private:
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
     auto curr_size = curr.size();
-    sizes_[Dim] = curr_size;
+    view::sizes_[Dim] = curr_size;
 
     for(auto&& next : curr) {
-      auto next_size = sizes_[Dim + 1];
+      auto next_size = view::sizes_[Dim + 1];
       if(next_size && (next_size != next.size())) {
         throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
       }
 
-      offsets_[Dim] = list_init_size_<Dim + 1>(next);
+      view::offsets_[Dim] = list_init_size_<Dim + 1>(next);
     }
 
-    return offsets_[Dim] * curr_size;
+    return view::offsets_[Dim] * curr_size;
   }
 
   template<size_t Dim>
@@ -235,26 +290,30 @@ private:
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
 
     auto size = init.size();
-    sizes_[Dim] = size;
-    offsets_[Dim] = 1;
+    view::sizes_[Dim] = size;
+    view::offsets_[Dim] = 1;
     return size;
   }
 
 
   template<size_t Dim, typename U>
   void list_init_values_(
+      size_type offset,
       std::initializer_list<std::initializer_list<U>> curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
     for(auto&& next : curr) {
-      list_init_values_<Dim + 1>(std::move(next));
+      list_init_values_<Dim + 1>(offset, std::move(next));
+      offset += view::offsets_[Dim];
     }
   }
 
   template<size_t Dim>
-  void list_init_values_(std::initializer_list<T> init) {
+  void list_init_values_(
+      size_type offset,
+      std::initializer_list<T> init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
-    vec_.insert(vec_.end(), std::move(init));
+    std::uninitialized_move_n(init.begin(), init.size(), view::first_ + offset);
   }
 };
 
