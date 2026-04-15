@@ -212,7 +212,9 @@ private:
       const T& val) {
     if (new_size > old_size) {
       reserve_(old_size, new_size);
-      std::uninitialized_fill_n(view::first_, new_size - old_size, val);
+      std::uninitialized_fill_n(view::first_ + old_size, new_size - old_size, val);
+    } else if (old_size > new_size) {
+      std::destroy_n(view::first_ + new_size, old_size - new_size);
     }
     return 1;
   }
