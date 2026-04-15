@@ -18,7 +18,7 @@ hypervector<std::string, 4> reference_iota(
     size_t size3) {
   auto hvec = hypervector<std::string, 4>(size0, size1, size2, size3);
   int i = 0;
-  for(auto& v : hvec) {
+  for (auto& v : hvec) {
     v = std::to_string(i++);
   }
   return hvec;
@@ -31,7 +31,7 @@ hypervector<std::string, 4> reference_iota_reverse(
     size_t size3) {
   auto hvec = hypervector<std::string, 4>(size0, size1, size2, size3);
   int i = size0 * size1* size2 * size3;
-  for(auto& v : hvec) {
+  for (auto& v : hvec) {
     v = std::to_string(--i);
   }
   return hvec;

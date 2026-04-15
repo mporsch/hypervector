@@ -18,6 +18,7 @@ struct hypervector_view
   using const_iterator = const_pointer;
   using iterator = pointer;
   using size_type = size_t;
+
   using size_storage = typename std::conditional<IsConst, const size_type*, size_type*>::type;
   using value_storage = typename std::conditional<IsConst, const_pointer, pointer>::type;
   using const_slice = typename std::conditional<(Dims > 1),
@@ -33,13 +34,10 @@ protected:
   value_storage first_;
 
 public:
-  hypervector_view() = default;
-
-
   hypervector_view(
       size_storage sizes,
       size_storage offsets,
-      value_storage first)
+      value_storage first) noexcept
     : sizes_(sizes)
     , offsets_(offsets)
     , first_(first) {
@@ -96,20 +94,20 @@ public:
   }
 
 
-  size_type size() const {
+  size_type size() const noexcept {
     return offsets_[0] * sizes_[0];
   }
 
 
   template<size_type Dim>
-  size_type sizeOf() const {
+  size_type sizeOf() const noexcept {
     static_assert(Dim < Dims, "hypervector_view::sizeOf");
     return sizes_[Dim];
   }
 
 
   template<size_type Dim>
-  size_type offsetOf() const {
+  size_type offsetOf() const noexcept {
     static_assert(Dim < Dims, "hypervector_view::offsetOf");
     return offsets_[Dim];
   }
@@ -117,33 +115,33 @@ public:
 
   template<typename ...Indices>
   typename std::enable_if<sizeof...(Indices) == Dims, size_type>::type
-  offsetOf(Indices&&... indices) const {
+  offsetOf(Indices&&... indices) const noexcept {
     return offsetOf_(std::forward<Indices>(indices)...);
   }
 
 
-  iterator begin() {
+  iterator begin() noexcept {
     return first_;
   }
 
 
-  iterator end() {
+  iterator end() noexcept {
     return first_ + size();
   }
 
 
-  const_iterator begin() const {
+  const_iterator begin() const noexcept {
     return first_;
   }
 
 
-  const_iterator end() const {
+  const_iterator end() const noexcept {
     return first_ + size();
   }
 
 
   // implicit conversion from non-const to const
-  operator hypervector_view<T, Dims, true>() const
+  operator hypervector_view<T, Dims, true>() const noexcept
   {
     return hypervector_view<T, Dims, true>(sizes_, offsets_, first_);
   }
@@ -176,7 +174,7 @@ protected:
       size_type index0,
       Indices&&... indices) const {
     constexpr auto dim = Dims - sizeof...(Indices) - 1;
-    if(index0 >= sizes_[dim])
+    if (index0 >= sizes_[dim])
       throw std::out_of_range("hypervector_view::at");
     return index0 * offsets_[dim] + indexOf_(std::forward<Indices>(indices)...);
   }
@@ -190,12 +188,12 @@ protected:
   typename std::enable_if<sizeof...(Indices) <= Dims - 1, size_type>::type
   offsetOf_(
       size_type index0,
-      Indices&&... indices) const {
+      Indices&&... indices) const noexcept {
     constexpr auto dim = Dims - sizeof...(Indices) - 1;
     return index0 * offsets_[dim] + offsetOf_(std::forward<Indices>(indices)...);
   }
 
-  size_type offsetOf_(size_type index) const {
+  size_type offsetOf_(size_type index) const noexcept {
     return index;
   }
 };

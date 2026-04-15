@@ -10,9 +10,6 @@
 #include <stdexcept>
 #include <type_traits>
 
-namespace hypervector_detail {
-} // namespace hypervector_detail
-
 /// hypervector container providing storage size modifiers
 template<typename T, size_t Dims>
 struct hypervector : public hypervector_view<T, Dims, false>
@@ -120,7 +117,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
-  hypervector& operator=(hypervector&& other) noexcept {
+  hypervector& operator=(hypervector&& other) {
     std::destroy_at(this);
     view::sizes_ = other.sizes_;
     view::offsets_ = other.offsets_;
@@ -278,9 +275,9 @@ private:
     auto curr_size = curr.size();
     view::sizes_[Dim] = curr_size;
 
-    for(auto&& next : curr) {
+    for (auto&& next : curr) {
       auto next_size = view::sizes_[Dim + 1];
-      if(next_size && (next_size != next.size())) {
+      if (next_size && (next_size != next.size())) {
         throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
       }
 
@@ -307,7 +304,7 @@ private:
       std::initializer_list<std::initializer_list<U>> curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
-    for(auto&& next : curr) {
+    for (auto&& next : curr) {
       list_init_values_<Dim + 1>(offset, std::move(next));
       offset += view::offsets_[Dim];
     }

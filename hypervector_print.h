@@ -11,7 +11,7 @@ std::ostream& operator<<(
     const hypervector_view<T, Dims, IsConst>& hvec) {
   auto size = hvec.template sizeOf<0>();
   const char* separator = "";
-  for(decltype(size) i = 0; i < size; ++i) {
+  for (decltype(size) i = 0; i < size; ++i) {
     os << separator << "(" << hvec[i] << ")";
     separator = ", ";
   }
@@ -24,7 +24,7 @@ std::ostream& operator<<(
     const hypervector_view<T, 1, IsConst>& hvec) {
   auto size = hvec.template sizeOf<0>();
   const char* separator = "";
-  for(decltype(size) i = 0; i < size; ++i) {
+  for (decltype(size) i = 0; i < size; ++i) {
     os << separator << hvec[i];
     separator = ", ";
   }
