@@ -67,16 +67,9 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
-  hypervector(hypervector&& other) noexcept
-    : view(
-        other.sizes_,
-        other.offsets_,
-        other.first_
-      )
-    , capacity_(other.capacity_) {
-    other.sizes_ = nullptr;
-    other.offsets_ = nullptr;
-    other.first_ = nullptr;
+  hypervector(hypervector&& other)
+    : hypervector(std::make_unique<size_type[]>(Dims * 2)) { // zero-initialized
+    swap(other, *this);
   }
 
 
@@ -102,14 +95,14 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector& operator=(hypervector&& other) {
-    std::destroy_at(this);
-    view::sizes_ = other.sizes_;
-    view::offsets_ = other.offsets_;
-    view::first_ = other.first_;
-    capacity_ = other.capacity_;
-    other.sizes_ = nullptr;
-    other.offsets_ = nullptr;
-    other.first_ = nullptr;
+    std::destroy_n(view::begin(), view::size());
+    std::allocator<T>().deallocate(view::first_, capacity_);
+    view::first_ = nullptr;
+    capacity_ = 0;
+    std::fill_n(view::sizes_, Dims, 0);
+    std::fill_n(view::offsets_, Dims, 0);
+
+    swap(other, *this);
     return *this;
   }
 
@@ -300,6 +293,19 @@ private:
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
     std::uninitialized_move_n(init.begin(), init.size(), view::first_ + offset);
   }
+
+  template<typename U, size_t Dim>
+  friend void swap(hypervector<U, Dim>&, hypervector<U, Dim>&) noexcept;
 };
+
+template<typename T, size_t Dims>
+void swap(hypervector<T, Dims>& lhs, hypervector<T, Dims>& rhs) noexcept
+{
+  using std::swap;
+  swap(lhs.sizes_, rhs.sizes_);
+  swap(lhs.offsets_, rhs.offsets_);
+  swap(lhs.first_, rhs.first_);
+  swap(lhs.capacity_, rhs.capacity_);
+}
 
 #endif // HYPERVECTOR_CONTAINER_H
