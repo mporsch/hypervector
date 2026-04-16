@@ -23,7 +23,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
   /// create empty container
   hypervector()
-    : hypervector(std::make_unique<size_type[]>(Dims * 2)) { // zero-initialized
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
   }
 
 
@@ -34,7 +34,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(std::make_unique_for_overwrite<size_type[]>(Dims * 2)) {
+    : hypervector(new size_t[Dims * 2]) {
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)...);
   }
 
@@ -46,7 +46,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(std::make_unique_for_overwrite<size_type[]>(Dims * 2)) {
+    : hypervector(new size_t[Dims * 2]) {
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., value_type());
   }
 
@@ -59,7 +59,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector(const hypervector& other)
-    : hypervector(std::make_unique_for_overwrite<size_type[]>(Dims * 2)) {
+    : hypervector(new size_t[Dims * 2]) {
     std::copy_n(other.sizes_, Dims, view::sizes_);
     std::copy_n(other.offsets_, Dims, view::offsets_);
     reserve_(0, other.size());
@@ -68,7 +68,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector(hypervector&& other)
-    : hypervector(std::make_unique<size_type[]>(Dims * 2)) { // zero-initialized
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
     swap(other, *this);
   }
 
@@ -77,7 +77,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   /// creates container with given values and dimensions
   template<typename U>
   hypervector(std::initializer_list<U> init)
-    : hypervector(std::make_unique<size_type[]>(Dims * 2)) { // zero-initialized
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
     reserve_(0, list_init_size_<0>(init));
     list_init_values_<0>(0, std::move(init));
   }
@@ -160,10 +160,9 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 private:
-  hypervector(std::unique_ptr<size_type[]> storage)
-    : view(storage.get(), storage.get() + Dims, nullptr)
+  hypervector(size_type* storage) noexcept
+    : view(storage, storage + Dims, nullptr)
     , capacity_(0) {
-    storage.release();
   }
 
   template<typename ...Sizes>
