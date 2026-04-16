@@ -13,12 +13,11 @@ option(HYPERVECTOR_BUILD_TESTS "Build test executable(s)" FALSE)
 set(HYPERVECTOR_PUBLIC_HEADER
   hypervector.h
   hypervector_container.h
-  hypervector_detail.h
   hypervector_print.h
   hypervector_view.h
 )
 add_library(hypervector INTERFACE ${HYPERVECTOR_PUBLIC_HEADER})
-target_compile_features(hypervector INTERFACE cxx_std_20)
+target_compile_features(hypervector INTERFACE cxx_std_20) # e.g. for std::uninitialized_copy_n(
 target_include_directories(hypervector INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:include>

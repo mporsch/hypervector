@@ -221,24 +221,24 @@ private:
   typename std::enable_if<sizeof...(Sizes) < Dims, void>::type
   reserve_(
       size_type old_size,
-      size_type size,
+      size_type acc_capacity,
       size_type size0,
       Sizes&&... sizes) {
-    reserve_(old_size, size * size0, std::forward<Sizes>(sizes)...);
+    reserve_(old_size, acc_capacity * size0, std::forward<Sizes>(sizes)...);
   }
 
   void reserve_(
       size_type old_size,
-      size_type size) {
-    if (size <= capacity_)
+      size_type new_capacity) {
+    if (new_capacity <= capacity_)
       return;
 
-    auto ptr = std::allocator<T>().allocate(size);
-    std::uninitialized_move_n(view::first_, old_size, ptr);
+    auto new_first = std::allocator<T>().allocate(new_capacity);
+    std::uninitialized_move_n(view::first_, old_size, new_first);
     std::destroy_n(view::first_, old_size);
     std::allocator<T>().deallocate(view::first_, capacity_);
-    view::first_ = ptr;
-    capacity_ = size;
+    view::first_ = new_first;
+    capacity_ = new_capacity;
   }
 
 
