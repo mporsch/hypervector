@@ -24,7 +24,8 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
   /// create empty container
   hypervector()
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : view(new hypervector_detail::dimension[Dims](/* zero-initialized */), nullptr)
+    , capacity_(0) {
   }
 
 
@@ -35,7 +36,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : hypervector() {
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)...);
   }
 
@@ -47,7 +48,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : hypervector() {
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., value_type());
   }
 
@@ -56,14 +57,14 @@ struct hypervector : public hypervector_view<T, Dims, false>
   /// creates container with given values and dimensions
   template<typename U>
   hypervector(std::initializer_list<U> init)
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : hypervector() {
     reserve_(0, list_check_<0>(init));
     (void)list_init_<0>(0, std::move(init));
   }
 
 
   hypervector(const hypervector& other)
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : hypervector() {
     reserve_(0, other.size());
     std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
     std::copy_n(other.dims_, Dims, view::dims_);
@@ -71,7 +72,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector(hypervector&& other)
-    : hypervector(new hypervector_detail::dimension[Dims]()) { // zero-initialized
+    : hypervector() {
     swap(other, *this);
   }
 
@@ -164,12 +165,6 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 private:
-  hypervector(hypervector_detail::dimension* dims) noexcept
-    : view(dims, nullptr)
-    , capacity_(0) {
-  }
-
-
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   resize_(
@@ -254,7 +249,7 @@ private:
 
 
   template<size_t Dim, typename U>
-  size_type list_check_(
+  static size_type list_check_(
       const std::initializer_list<std::initializer_list<U>>& curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
@@ -270,7 +265,7 @@ private:
   }
 
   template<size_t Dim>
-  size_type list_check_(const std::initializer_list<T>& init) {
+  static size_type list_check_(const std::initializer_list<T>& init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
 
     return init.size();
