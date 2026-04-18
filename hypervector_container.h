@@ -34,7 +34,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(new size_t[Dims * 2]) {
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)...);
   }
 
@@ -46,24 +46,23 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
       Sizes&&... sizes)
-    : hypervector(new size_t[Dims * 2]) {
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
     (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., value_type());
   }
 
 
   ~hypervector() {
     std::destroy_n(view::begin(), view::size());
-    std::allocator<T>().deallocate(view::first_, capacity_);
+    std::allocator<T>().deallocate(view::begin(), capacity_);
     delete[] view::sizes_; // offsets_ belongs to the same allocation
   }
 
 
   hypervector(const hypervector& other)
-    : hypervector(new size_t[Dims * 2]) {
-    std::copy_n(other.sizes_, Dims, view::sizes_);
-    std::copy_n(other.offsets_, Dims, view::offsets_);
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
     reserve_(0, other.size());
-    std::uninitialized_copy_n(other.first_, other.size(), view::first_);
+    std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
+    std::copy_n(other.sizes_, Dims * 2, view::sizes_); // offsets_ is included
   }
 
 
@@ -78,29 +77,25 @@ struct hypervector : public hypervector_view<T, Dims, false>
   template<typename U>
   hypervector(std::initializer_list<U> init)
     : hypervector(new size_t[Dims * 2]()) { // zero-initialized
-    reserve_(0, list_init_size_<0>(init));
-    list_init_values_<0>(0, std::move(init));
+    reserve_(0, list_check_<0>(init));
+    (void)list_init_<0>(0, std::move(init));
   }
 
 
   hypervector& operator=(const hypervector& other) {
-    // no need to preserve anything: destroy, possibly grow, overwrite
-    std::destroy_n(view::first_, view::size());
+    clear();
     reserve_(0, other.size());
-    std::copy_n(other.sizes_, Dims, view::sizes_);
-    std::copy_n(other.offsets_, Dims, view::offsets_);
-    std::uninitialized_copy_n(other.first_, other.size(), view::first_);
+    std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
+    std::copy_n(other.sizes_, Dims * 2, view::sizes_); // offsets_ is included
     return *this;
   }
 
 
   hypervector& operator=(hypervector&& other) {
-    std::destroy_n(view::begin(), view::size());
+    clear();
     std::allocator<T>().deallocate(view::first_, capacity_);
     view::first_ = nullptr;
     capacity_ = 0;
-    std::fill_n(view::sizes_, Dims, 0);
-    std::fill_n(view::offsets_, Dims, 0);
 
     swap(other, *this);
     return *this;
@@ -143,6 +138,11 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
+  void clear() {
+    clear_(view::size());
+  }
+
+
   // void reserve(size_type count...)
   /// reserve container to given maximum dimension sizes to pre-allocate storage
   template<typename ...Sizes>
@@ -173,8 +173,8 @@ private:
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
-    view::sizes_[dim] = size0;
     view::offsets_[dim] = resize_(old_size, acc_size * size0, std::forward<Sizes>(sizes)...);
+    view::sizes_[dim] = size0;
     return view::offsets_[dim] * size0;
   }
 
@@ -184,9 +184,9 @@ private:
       const T& val) {
     if (new_size > old_size) {
       reserve_(old_size, new_size);
-      std::uninitialized_fill_n(view::first_ + old_size, new_size - old_size, val);
+      std::uninitialized_fill_n(view::begin() + old_size, new_size - old_size, val);
     } else if (old_size > new_size) {
-      std::destroy_n(view::first_ + new_size, old_size - new_size);
+      std::destroy_n(view::begin() + new_size, old_size - new_size);
     }
     return 1;
   }
@@ -200,8 +200,8 @@ private:
       size_type size0,
       Sizes&&... sizes) {
     constexpr auto dim = Dims - sizeof...(Sizes);
-    view::sizes_[dim] = size0;
     view::offsets_[dim] = assign_(old_size, acc_size * size0, std::forward<Sizes>(sizes)...);
+    view::sizes_[dim] = size0;
     return view::offsets_[dim] * size0;
   }
 
@@ -210,10 +210,16 @@ private:
       size_type new_size,
       const T& val) {
     // no need to preserve anything: destroy, possibly grow, overwrite
-    std::destroy_n(view::first_, old_size);
+    clear_(old_size);
     reserve_(0, new_size);
-    std::uninitialized_fill_n(view::first_, new_size, val);
+    std::uninitialized_fill_n(view::begin(), new_size, val);
     return 1;
+  }
+
+
+  void clear_(size_type old_size) {
+    std::destroy_n(view::begin(), old_size);
+    std::fill_n(view::sizes_, Dims * 2, 0); // offsets_ is included
   }
 
 
@@ -243,55 +249,62 @@ private:
 
 
   template<size_t Dim, typename U>
-  size_type list_init_size_(
+  size_type list_check_(
       const std::initializer_list<std::initializer_list<U>>& curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
-    auto curr_size = curr.size();
-    view::sizes_[Dim] = curr_size;
-
+    size_type acc_size = 0;
     for (auto&& next : curr) {
-      auto next_size = view::sizes_[Dim + 1];
-      if (next_size && (next_size != next.size())) {
+      auto next_size = list_check_<Dim + 1>(next);
+      if (acc_size && (acc_size != next_size)) {
         throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
       }
-
-      view::offsets_[Dim] = list_init_size_<Dim + 1>(next);
+      acc_size = next_size;
     }
 
-    return view::offsets_[Dim] * curr_size;
+    return acc_size * curr.size();
   }
 
   template<size_t Dim>
-  size_type list_init_size_(const std::initializer_list<T>& init) {
+  size_type list_check_(const std::initializer_list<T>& init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
 
-    auto size = init.size();
-    view::sizes_[Dim] = size;
-    view::offsets_[Dim] = 1;
-    return size;
+    return init.size();
   }
 
 
   template<size_t Dim, typename U>
-  void list_init_values_(
-      size_type offset,
+  size_type list_init_(
+      size_type acc_offset,
       std::initializer_list<std::initializer_list<U>> curr) {
     static_assert(Dim < Dims, "hypervector(std::initializer_list)");
 
+    size_type offset = 0;
     for (auto&& next : curr) {
-      list_init_values_<Dim + 1>(offset, std::move(next));
-      offset += view::offsets_[Dim];
+      offset = list_init_<Dim + 1>(acc_offset, std::move(next));
+      acc_offset += offset;
     }
+
+    // XXX offsets and sizes are applied before all values have been moved
+    //     not ideal but the critical top-level offset and size are written last
+    view::offsets_[Dim] = offset;
+    view::sizes_[Dim] = curr.size();
+    return view::offsets_[Dim] * view::sizes_[Dim];
   }
 
   template<size_t Dim>
-  void list_init_values_(
+  size_type list_init_(
       size_type offset,
       std::initializer_list<T> init) {
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
-    std::uninitialized_move_n(init.begin(), init.size(), view::first_ + offset);
+
+    auto size = init.size();
+    std::uninitialized_move_n(init.begin(), size, view::begin() + offset);
+    view::offsets_[Dim] = 1;
+    view::sizes_[Dim] = size;
+    return size;
   }
+
 
   template<typename U, size_t Dim>
   friend void swap(hypervector<U, Dim>&, hypervector<U, Dim>&) noexcept;
