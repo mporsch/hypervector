@@ -17,7 +17,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 {
   using view = hypervector_view<T, Dims, false>;
 
-  using value_type = typename view::value_type;
+  using value_type = T;
   using size_type = typename view::size_type;
 
   size_type capacity_;
@@ -78,7 +78,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
   ~hypervector() {
     std::destroy_n(view::begin(), view::size());
-    std::allocator<T>().deallocate(view::begin(), capacity_);
+    std::allocator<T>().deallocate(view::begin(), capacity());
     delete[] view::dims_;
   }
 
@@ -261,9 +261,8 @@ private:
     size_type acc_size = 0;
     for (auto&& next : curr) {
       auto next_size = list_check_<Dim + 1>(next);
-      if (acc_size && (acc_size != next_size)) {
+      if (acc_size && (acc_size != next_size))
         throw std::invalid_argument("hypervector(std::initializer_list): unequal list sizes");
-      }
       acc_size = next_size;
     }
 

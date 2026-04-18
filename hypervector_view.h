@@ -12,7 +12,6 @@
 template<typename T, size_t Dims, bool IsConst>
 struct hypervector_view
 {
-  using value_type = T;
   using const_pointer = const T*;
   using pointer = T*;
   using const_reference = const T&;

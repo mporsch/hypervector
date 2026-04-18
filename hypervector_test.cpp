@@ -104,13 +104,18 @@ int main(int /*argc*/, char** /*argv*/) {
 
     {
       auto hvec2 = std::move(hvec);
+      success &= (hvec2.size() == 3 * 3 * 3);
       hvec = hvec2;
+      success &= (hvec.size() == hvec2.size());
 
       hvec.clear();
+      success &= (hvec.size() == 0);
 
       using std::swap;
       swap(hvec, hvec2);
+      success &= (hvec2.size() == 0);
       swap(hvec2, hvec);
+      success &= (hvec.size() == 0);
 
       hvec = std::move(hvec2);
     }
