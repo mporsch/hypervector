@@ -102,6 +102,19 @@ int main(int /*argc*/, char** /*argv*/) {
        {"", "", ""}}}));
     std::cout << "resize(3, 3, 3):\n" << hvec << "\n\n";
 
+    {
+      auto hvec2 = std::move(hvec);
+      hvec = hvec2;
+
+      hvec.clear();
+
+      using std::swap;
+      swap(hvec, hvec2);
+      swap(hvec2, hvec);
+
+      hvec = std::move(hvec2);
+    }
+
     hvec.resize(3, 3, 0);
     success &= (hvec.size() == 3 * 3 * 0);
     std::cout << "resize(3, 3, 0):\n" << hvec << "\n\n";
