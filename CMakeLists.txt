@@ -13,6 +13,7 @@ option(HYPERVECTOR_BUILD_TESTS "Build test executable(s)" FALSE)
 set(HYPERVECTOR_PUBLIC_HEADER
   hypervector.h
   hypervector_container.h
+  hypervector_detail.h
   hypervector_print.h
   hypervector_view.h
 )
