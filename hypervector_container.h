@@ -51,10 +51,13 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
-  ~hypervector() {
-    std::destroy_n(view::begin(), view::size());
-    std::allocator<T>().deallocate(view::begin(), capacity_);
-    delete[] view::sizes_; // offsets_ belongs to the same allocation
+  // hypervector(std::initializer_list<std::initializer_list<...>>)
+  /// creates container with given values and dimensions
+  template<typename U>
+  hypervector(std::initializer_list<U> init)
+    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
+    reserve_(0, list_check_<0>(init));
+    (void)list_init_<0>(0, std::move(init));
   }
 
 
@@ -72,13 +75,10 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
-  // hypervector(std::initializer_list<std::initializer_list<...>>)
-  /// creates container with given values and dimensions
-  template<typename U>
-  hypervector(std::initializer_list<U> init)
-    : hypervector(new size_t[Dims * 2]()) { // zero-initialized
-    reserve_(0, list_check_<0>(init));
-    (void)list_init_<0>(0, std::move(init));
+  ~hypervector() {
+    std::destroy_n(view::begin(), view::size());
+    std::allocator<T>().deallocate(view::begin(), capacity_);
+    delete[] view::sizes_; // offsets_ belongs to the same allocation
   }
 
 
@@ -138,13 +138,14 @@ struct hypervector : public hypervector_view<T, Dims, false>
   }
 
 
+  /// destroy contents and set dimension sizes to zero
   void clear() {
     clear_(view::size());
   }
 
 
   // void reserve(size_type count...)
-  /// reserve container to given maximum dimension sizes to pre-allocate storage
+  /// reserve container to given dimension sizes to pre-allocate storage
   template<typename ...Sizes>
   typename std::enable_if<
     sizeof...(Sizes) == Dims - 1 || sizeof...(Sizes) == 0,
@@ -155,6 +156,8 @@ struct hypervector : public hypervector_view<T, Dims, false>
     reserve_(view::size(), size0, std::forward<Sizes>(sizes)...);
   }
 
+
+  /// get current pre-allocated storage capacity
   size_type capacity() const noexcept {
     return capacity_;
   }
@@ -164,6 +167,7 @@ private:
     : view(storage, storage + Dims, nullptr)
     , capacity_(0) {
   }
+
 
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
