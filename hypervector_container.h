@@ -64,6 +64,11 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector(const hypervector& other)
+    : hypervector(static_cast<const view&>(other)) {
+  }
+
+
+  hypervector(const view& other)
     : hypervector() {
     reserve_(0, other.size());
     std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
@@ -85,6 +90,11 @@ struct hypervector : public hypervector_view<T, Dims, false>
 
 
   hypervector& operator=(const hypervector& other) {
+    return operator=(static_cast<const view&>(other));
+  }
+
+
+  hypervector& operator=(const view& other) {
     clear();
     reserve_(0, other.size());
     std::uninitialized_copy_n(other.begin(), other.size(), view::begin());

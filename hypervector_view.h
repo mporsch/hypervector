@@ -196,6 +196,11 @@ protected:
   size_type offsetOf_(size_type index) const noexcept {
     return index;
   }
+
+
+  // XXX friend declaration for hypervector's construct/assign from view
+  template<typename, size_t>
+  friend struct hypervector;
 };
 
 #endif // HYPERVECTOR_VIEW_H

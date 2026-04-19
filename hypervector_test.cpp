@@ -190,6 +190,10 @@ int main(int /*argc*/, char** /*argv*/) {
               hvec[w][x][y][z] = std::to_string(--i);
     success &= (hvec == reference_iota_reverse(5, 4, 3, 2));
     std::cout << "operator[w][x][y][z]:\n"  << hvec << "\n\n";
+
+    hypervector<std::string, 2> slice = hvec[4][3];
+    success &= (slice == reference_iota_reverse(5, 4, 3, 2)[4][3]);
+    std::cout << "slice [4][3] of [5][4][3][2]:\n" << slice << "\n\n";
   }
 
   return (success ? EXIT_SUCCESS : EXIT_FAILURE);
