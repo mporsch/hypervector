@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-/// hypervector container providing storage size modifiers
+/// hypervector container providing size/shape modifiers and ownership of storage
 template<typename T, size_t Dims>
 struct hypervector : public hypervector_view<T, Dims, false>
 {
@@ -20,7 +20,8 @@ struct hypervector : public hypervector_view<T, Dims, false>
   using value_type = T;
   using size_type = typename view::size_type;
 
-  size_type capacity_;
+  /// uses the views members for access to shape and values
+  size_type capacity_; ///< pre-allocated memory managed via reserve()
 
   /// create empty container
   hypervector()

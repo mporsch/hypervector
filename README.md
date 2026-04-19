@@ -1,5 +1,5 @@
 # hypervector
-A multi-dimensional vector based on a one-dimensional `std::vector`.
+A multi-dimensional vector with storage similar to a one-dimensional `std::vector`.
 
 ## Motivation
 Assume you have to store multi-dimensional data, but the sizes are dynamic and the storage should adapt to that.
@@ -12,7 +12,9 @@ Intended to be used like static multi-dimensional arrays (`T[N][M]` or `std::arr
 Compared with a multi-dimensional `std::vector`, the hypervector will use the singular dynamic memory of its one-dimensional container without multiple scattered allocations.
 
 The view data structure of the hypervector is designed such that one can simply 'shave off' the outer layers and get valid views on subdimensions.
-I.e. each view points to the very same shared members; the only distinction is its lower dimensionality.
+I.e. each view points to the very same shared data; the only distinction is its lower dimensionality and extent.
+
+The container data structure of the hypervector derives from the view. It extends its interface with size/shape modifiers and holds ownership of the pointed-to data while using the views very own members.
 
 ## Interface
 While the number of dimensions is fixed at compile time, the size of each dimension can be changed at runtime.
@@ -35,4 +37,4 @@ The interface is designed to resemble `std::vector`, except that some methods re
 Implemented as C++11 variadic template.
 
 ## Build
-Build test using CMake or `$ g++ -o hypervector_test hypervector_test.cpp -std=c++11`
+Build test using CMake or `$ g++ -o hypervector_test hypervector_test.cpp -std=c++20`

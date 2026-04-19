@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <type_traits>
 
-/// view on hypervector storage providing element read and write accessors
+/// view on hypervector container providing element read and write accessors
 template<typename T, size_t Dims, bool IsConst>
 struct hypervector_view
 {
@@ -34,13 +34,15 @@ struct hypervector_view
     void>::type;
 
 protected:
-  dimension_storage dims_;
-  value_storage vals_;
+  dimension_storage dims_; ///< pointer to shape and stride of dimensions
+  value_storage vals_; ///< pointer to (possibly over-allocated) data
 
 public:
+  // constructor used by container
+  // also default-constructible to (horribly) invalid e.g. for use in std::vector
   hypervector_view(
-      dimension_storage dims,
-      value_storage vals) noexcept
+      dimension_storage dims = nullptr,
+      value_storage vals = nullptr) noexcept
     : dims_(dims)
     , vals_(vals) {
   }

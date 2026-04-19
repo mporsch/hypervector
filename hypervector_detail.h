@@ -8,8 +8,8 @@ namespace hypervector_detail {
 using size_type = size_t;
 
 struct dimension {
-  size_type size;
-  size_type offset;
+  size_type size; ///< extent of this dimension
+  size_type offset; ///< stride of this dimensions data
 
   bool operator==(const dimension&) const noexcept = default;
 };
