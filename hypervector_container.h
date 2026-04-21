@@ -87,7 +87,7 @@ public:
 
   ~hypervector() {
     std::destroy_n(view::begin(), view::size());
-    std::allocator<T>().deallocate(view::begin(), capacity());
+    deallocate_(view::begin(), capacity());
     delete[] view::dims_;
   }
 
@@ -108,7 +108,7 @@ public:
 
   hypervector& operator=(hypervector&& other) {
     clear();
-    std::allocator<T>().deallocate(view::vals_, capacity_);
+    deallocate_(view::vals_, capacity_);
     view::vals_ = nullptr;
     capacity_ = 0;
 
@@ -178,6 +178,29 @@ public:
   }
 
 private:
+  struct deallocator
+  {
+    size_type size;
+
+    void operator()(T* ptr) const {
+      deallocate_(ptr, size);
+    }
+  };
+
+
+  static std::unique_ptr<T[], deallocator> allocate_(size_type size) {
+    return {
+      std::allocator<T>().allocate(size),
+      deallocator{size}
+    };
+  }
+
+
+  static void deallocate_(T* ptr, size_type size) {
+    std::allocator<T>().deallocate(ptr, size);
+  }
+
+
   template<typename ...Sizes>
   typename std::enable_if<sizeof...(Sizes) <= Dims, size_type>::type
   resize_(
@@ -252,11 +275,11 @@ private:
     if (new_capacity <= capacity_)
       return;
 
-    auto new_vals = std::allocator<T>().allocate(new_capacity);
-    std::uninitialized_move_n(view::vals_, old_size, new_vals); // XXX unsafe if throws
+    auto new_vals = allocate_(new_capacity);
+    std::uninitialized_move_n(view::vals_, old_size, new_vals.get()); // XXX unsafe if throws halfway in
     std::destroy_n(view::vals_, old_size);
-    std::allocator<T>().deallocate(view::vals_, capacity_);
-    view::vals_ = new_vals;
+    deallocate_(view::vals_, capacity_);
+    view::vals_ = new_vals.release();
     capacity_ = new_capacity;
   }
 
