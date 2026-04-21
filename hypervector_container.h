@@ -20,9 +20,11 @@ struct hypervector : public hypervector_view<T, Dims, false>
   using value_type = T;
   using size_type = typename view::size_type;
 
-  /// uses the views members for access to shape and values
+private:
+  // uses the views members for access to shape and values
   size_type capacity_; ///< pre-allocated memory managed via reserve()
 
+public:
   /// create empty container
   hypervector()
     : view(new hypervector_detail::dimension[Dims](/* zero-initialized */), nullptr)
@@ -72,7 +74,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector(const view& other)
     : hypervector() {
     reserve_(0, other.size());
-    std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
+    std::uninitialized_copy_n(other.begin(), other.size(), view::begin()); // XXX unsafe if throws halfway in
     std::copy_n(other.dims_, Dims, view::dims_);
   }
 
@@ -98,7 +100,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   hypervector& operator=(const view& other) {
     clear();
     reserve_(0, other.size());
-    std::uninitialized_copy_n(other.begin(), other.size(), view::begin());
+    std::uninitialized_copy_n(other.begin(), other.size(), view::begin()); // XXX unsafe if throws halfway in
     std::copy_n(other.dims_, Dims, view::dims_);
     return *this;
   }
@@ -195,7 +197,7 @@ private:
       const T& val) {
     if (new_size > old_size) {
       reserve_(old_size, new_size);
-      std::uninitialized_fill_n(view::begin() + old_size, new_size - old_size, val);
+      std::uninitialized_fill_n(view::begin() + old_size, new_size - old_size, val); // XXX unsafe if throws halfway in
     } else if (old_size > new_size) {
       std::destroy_n(view::begin() + new_size, old_size - new_size);
     }
@@ -220,10 +222,10 @@ private:
       size_type old_size,
       size_type new_size,
       const T& val) {
-    // no need to preserve anything: destroy, possibly grow, overwrite
+    // no backup: destroy, possibly grow, overwrite
     clear_(old_size);
     reserve_(0, new_size);
-    std::uninitialized_fill_n(view::begin(), new_size, val);
+    std::uninitialized_fill_n(view::begin(), new_size, val); // XXX unsafe if throws halfway in
     return 1;
   }
 
@@ -251,7 +253,7 @@ private:
       return;
 
     auto new_vals = std::allocator<T>().allocate(new_capacity);
-    std::uninitialized_move_n(view::vals_, old_size, new_vals);
+    std::uninitialized_move_n(view::vals_, old_size, new_vals); // XXX unsafe if throws
     std::destroy_n(view::vals_, old_size);
     std::allocator<T>().deallocate(view::vals_, capacity_);
     view::vals_ = new_vals;
@@ -309,7 +311,7 @@ private:
     static_assert(Dim + 1 == Dims, "hypervector(std::initializer_list)");
 
     auto size = init.size();
-    std::uninitialized_move_n(init.begin(), size, view::begin() + offset);
+    std::uninitialized_move_n(init.begin(), size, view::begin() + offset); // XXX unsafe if throws
     view::dims_[Dim].offset = 1;
     view::dims_[Dim].size = size;
     return size;

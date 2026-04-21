@@ -1,5 +1,5 @@
 # hypervector
-A multi-dimensional vector with storage similar to a one-dimensional `std::vector`.
+A multi-dimensional container with an interface extending `std::vector`.
 
 ## Motivation
 Assume you have to store multi-dimensional data, but the sizes are dynamic and the storage should adapt to that.
