@@ -69,7 +69,8 @@ public:
   }
 
 
-  hypervector(const view& other)
+  template<bool IsConst>
+  hypervector(const hypervector_view<T, Dims, IsConst>& other)
     : hypervector() {
     reserve_(0, other.size());
     std::uninitialized_copy_n(other.begin(), other.size(), view::begin()); // XXX unsafe if throws halfway in
@@ -95,7 +96,8 @@ public:
   }
 
 
-  hypervector& operator=(const view& other) {
+  template<bool IsConst>
+  hypervector& operator=(const hypervector_view<T, Dims, IsConst>& other) {
     clear();
     reserve_(0, other.size());
     std::uninitialized_copy_n(other.begin(), other.size(), view::begin()); // XXX unsafe if throws halfway in
