@@ -107,12 +107,8 @@ public:
 
 
   hypervector& operator=(hypervector&& other) {
-    clear();
-    deallocate_(view::vals_, capacity_);
-    view::vals_ = nullptr;
-    capacity_ = 0;
-
     swap(other, *this);
+    other.clear(); // moved-from keeps its reserved allocation
     return *this;
   }
 
