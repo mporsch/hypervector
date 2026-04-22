@@ -16,8 +16,6 @@ template<typename T, size_t Dims>
 struct hypervector : public hypervector_view<T, Dims, false>
 {
   using view = hypervector_view<T, Dims, false>;
-
-  using value_type = T;
   using size_type = typename view::size_type;
 
 private:
@@ -52,7 +50,7 @@ public:
       typename std::enable_if<sizeof...(Sizes) == Dims - 1, size_type>::type size0,
       Sizes&&... sizes)
     : hypervector() {
-    (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., value_type());
+    (void)assign_(0, 1, size0, std::forward<Sizes>(sizes)..., T());
   }
 
 

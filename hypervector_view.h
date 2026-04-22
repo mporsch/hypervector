@@ -12,12 +12,14 @@
 template<typename T, size_t Dims, bool IsConst>
 struct hypervector_view
 {
-  using const_pointer = const T*;
-  using pointer = T*;
-  using const_reference = const T&;
+  using value_type = T;
   using reference = T&;
-  using const_iterator = const_pointer;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
   using iterator = pointer;
+  using const_iterator = const_pointer;
+  using difference_type = std::ptrdiff_t;
   using size_type = hypervector_detail::size_type;
 
   using dimension_storage = typename std::conditional<IsConst,
@@ -101,6 +103,11 @@ public:
   }
 
 
+  bool empty() const noexcept {
+    return (size() == 0);
+  }
+
+
   template<size_type Dim>
   size_type sizeOf() const noexcept {
     static_assert(Dim < Dims, "hypervector_view::sizeOf");
@@ -132,13 +139,23 @@ public:
   }
 
 
-  const_iterator begin() const noexcept {
+  const_iterator cbegin() const noexcept {
     return vals_;
   }
 
 
-  const_iterator end() const noexcept {
+  const_iterator cend() const noexcept {
     return vals_ + size();
+  }
+
+
+  const_iterator begin() const noexcept {
+    return cbegin();
+  }
+
+
+  const_iterator end() const noexcept {
+    return cend();
   }
 
 
