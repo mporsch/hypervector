@@ -21,7 +21,7 @@ struct hypervector : public hypervector_view<T, Dims, false>
   using size_type = typename view::size_type;
 
 private:
-  // uses the views members for access to shape and values
+  // uses the view's members for access to shape and values
   size_type capacity_; ///< pre-allocated memory managed via reserve()
 
 public:
@@ -160,7 +160,7 @@ public:
 
 
   // void reserve(size_type count...)
-  /// reserve container to given dimension sizes to pre-allocate storage
+  /// pre-allocate container to given dimension sizes
   template<typename ...Sizes>
   typename std::enable_if<
     sizeof...(Sizes) == Dims - 1 || sizeof...(Sizes) == 0,
@@ -321,7 +321,7 @@ private:
     }
 
     // XXX offsets and sizes are applied before all values have been moved
-    //     not ideal but the critical top-level offset and size are written last
+    //     not ideal but the top-level offset and size relevant for size() are written last
     view::dims_[Dim].offset = offset;
     view::dims_[Dim].size = curr.size();
     return view::dims_[Dim].offset * view::dims_[Dim].size;
